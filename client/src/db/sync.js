@@ -1,5 +1,6 @@
 import { db, getMeta, setMeta } from './db.js';
 import { getCurrentUserId } from './repo.js';
+import { deriveAuthKey } from './authKey.js';
 
 const API = import.meta.env.VITE_API_URL ?? '';
 
@@ -40,8 +41,10 @@ export async function register({ email, password, name }) {
   // Se manda el id local para que el servidor adopte todo lo que ya se
   // registro offline antes de crear la cuenta.
   const localUserId = await getCurrentUserId();
+  // Nunca viaja la contraseña: viaja PBKDF2(contraseña). Ver authKey.js.
+  const authKey = await deriveAuthKey(email, password);
   const data = await call('/api/auth/register', {
-    body: { email, password, name, localUserId },
+    body: { email, authKey, name, localUserId },
     auth: false,
   });
   await setSession(data);
@@ -49,7 +52,8 @@ export async function register({ email, password, name }) {
 }
 
 export async function login({ email, password }) {
-  const data = await call('/api/auth/login', { body: { email, password }, auth: false });
+  const authKey = await deriveAuthKey(email, password);
+  const data = await call('/api/auth/login', { body: { email, authKey }, auth: false });
   const previo = await getCurrentUserId();
   await setSession(data);
   // Entrar con otra cuenta en el mismo telefono: lo local es de otro dueño y
@@ -59,9 +63,14 @@ export async function login({ email, password }) {
 }
 
 export async function changePassword({ currentPassword, newPassword }) {
+  const email = await getMeta('userEmail');
+  const [currentAuthKey, newAuthKey] = await Promise.all([
+    deriveAuthKey(email, currentPassword),
+    deriveAuthKey(email, newPassword),
+  ]);
   const data = await call('/api/auth/password', {
     method: 'PATCH',
-    body: { currentPassword, newPassword },
+    body: { currentAuthKey, newAuthKey },
   });
   await setMeta('authToken', data.token);
   return true;

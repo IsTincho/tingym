@@ -1,43 +1,7 @@
-import { Router } from 'express';
-import Anthropic from '@anthropic-ai/sdk';
-import { z } from 'zod';
-import { aiVerdictSchema, deterministicVerdict, setSchema } from '@gym/shared';
-import { requireAuth, rateLimit } from '../auth.js';
+// El prompt y el parseo del veredicto viven acá para que el Worker y el
+// servidor Express compartan exactamente el mismo comportamiento.
 
-const router = Router();
-
-const MODEL = process.env.ANTHROPIC_MODEL ?? 'claude-sonnet-5';
-
-const body = z.object({
-  exerciseName: z.string().max(120).default('el ejercicio'),
-  loadType: z.string().max(30).default('barbell'),
-  sets: z.array(setSchema.partial({ loggedAt: true })).min(1),
-  target: z.object({
-    targetSets: z.number().int().min(1).max(12),
-    repRangeMin: z.number().int().min(1).max(100),
-    repRangeMax: z.number().int().min(1).max(100),
-    restSeconds: z.number().int().min(0).max(600).optional(),
-    note: z.string().max(300).optional(),
-  }),
-  history: z
-    .array(
-      z.object({
-        date: z.string(),
-        sets: z.array(setSchema.partial({ loggedAt: true })),
-      }),
-    )
-    .max(3)
-    .default([]),
-  context: z
-    .object({
-      exerciseNumber: z.number().int().min(1).max(30).optional(),
-      consecutiveDay: z.boolean().optional(),
-      userNote: z.string().max(300).optional(),
-    })
-    .default({}),
-});
-
-const SYSTEM = `Sos el analista de un registro de entrenamiento de gimnasio. Recibís las series que un atleta acaba de hacer en un ejercicio, el rango de repeticiones objetivo y sus últimas sesiones en ese mismo ejercicio. Devolvés una lectura corta y una decisión de carga.
+export const SYSTEM_PROMPT = `Sos el analista de un registro de entrenamiento de gimnasio. Recibís las series que un atleta acaba de hacer en un ejercicio, el rango de repeticiones objetivo y sus últimas sesiones en ese mismo ejercicio. Devolvés una lectura corta y una decisión de carga.
 
 Lógica de progresión que tenés que respetar:
 - Todas las series en el techo del rango o por encima: subir el peso.
@@ -60,7 +24,7 @@ Reglas duras:
 Respondés EXCLUSIVAMENTE con un objeto JSON, sin markdown, sin backticks y sin texto antes o después, con esta forma exacta:
 {"reading": string, "action": "subir"|"mantener"|"bajar"|"sumar_reps"|"revisar_tecnica", "suggestedWeightKg": number|null, "confidence": "alta"|"media"|"baja"}`;
 
-function userPrompt(input) {
+export function userPrompt(input) {
   const serie = (s, i) =>
     `  ${i + 1}. ${s.weightKg == null ? 'sin carga' : `${s.weightKg} kg`} × ${s.reps} reps` +
     `${s.rpe ? ` (RPE ${s.rpe})` : ''}${s.failed ? ' [fallo]' : ''}${s.note ? ` — "${s.note}"` : ''}`;
@@ -91,7 +55,7 @@ Contexto: ${input.context.exerciseNumber ? `ejercicio número ${input.context.ex
  * Extrae el JSON aunque el modelo haya agregado algo alrededor. El prompt pide
  * JSON pelado, pero el parseo no puede depender de que siempre obedezca.
  */
-function parseVerdict(text) {
+export function parseVerdict(text) {
   const limpio = text.trim().replace(/^```(?:json)?/i, '').replace(/```$/, '').trim();
   try {
     return JSON.parse(limpio);
@@ -106,57 +70,3 @@ function parseVerdict(text) {
     }
   }
 }
-
-router.post('/verdict', requireAuth, rateLimit({ windowMs: 60_000, max: 20 }), async (req, res) => {
-  const parsed = body.safeParse(req.body);
-  if (!parsed.success) {
-    return res.status(400).json({ error: parsed.error.issues[0].message });
-  }
-  const input = parsed.data;
-
-  // El fallback se calcula SIEMPRE y primero: si la IA falla, se agota el
-  // rate limit o el modelo devuelve cualquier cosa, igual hay veredicto.
-  const fallback = deterministicVerdict({
-    sets: input.sets,
-    target: input.target,
-    loadType: input.loadType,
-  });
-
-  if (!process.env.ANTHROPIC_API_KEY) {
-    return res.json({ verdict: fallback, degraded: 'sin API key configurada' });
-  }
-
-  try {
-    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-    const respuesta = await client.messages.create({
-      model: MODEL,
-      max_tokens: 400,
-      system: SYSTEM,
-      messages: [{ role: 'user', content: userPrompt(input) }],
-    });
-
-    const texto = respuesta.content
-      .filter((b) => b.type === 'text')
-      .map((b) => b.text)
-      .join('');
-
-    const crudo = parseVerdict(texto);
-    if (!crudo) return res.json({ verdict: fallback, degraded: 'respuesta no parseable' });
-
-    const veredicto = aiVerdictSchema.safeParse({
-      ...crudo,
-      suggestedWeightKg: crudo.suggestedWeightKg ?? null,
-      source: 'ai',
-      generatedAt: new Date().toISOString(),
-    });
-
-    if (!veredicto.success) {
-      return res.json({ verdict: fallback, degraded: 'respuesta fuera de esquema' });
-    }
-    return res.json({ verdict: veredicto.data });
-  } catch (err) {
-    return res.json({ verdict: fallback, degraded: err?.message ?? 'error de la API' });
-  }
-});
-
-export default router;

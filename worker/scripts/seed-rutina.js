@@ -7,15 +7,26 @@
  * dispositivo, y si algo del contrato está roto, se rompe acá.
  *
  * Uso:
- *   node server/scripts/seed-rutina.js <API_URL> <EMAIL> <PASSWORD>
+ *   node worker/scripts/seed-rutina.js <API_URL> <EMAIL> <PASSWORD>
  */
+import { pbkdf2Sync } from 'node:crypto';
 import { SEED_EXERCISES, exerciseId, newId } from '@gym/shared';
 
 const [API, EMAIL, PASSWORD] = process.argv.slice(2);
 if (!API || !EMAIL || !PASSWORD) {
-  console.error('Uso: node server/scripts/seed-rutina.js <API_URL> <EMAIL> <PASSWORD>');
+  console.error('Uso: node worker/scripts/seed-rutina.js <API_URL> <EMAIL> <PASSWORD>');
   process.exit(1);
 }
+
+// Mismos parametros que client/src/db/authKey.js: la contraseña no viaja, se
+// manda PBKDF2 de la contraseña.
+const authKey = pbkdf2Sync(
+  PASSWORD,
+  `tingym|${EMAIL.toLowerCase().trim()}`,
+  210_000,
+  32,
+  'sha256',
+).toString('hex');
 
 const ex = exerciseId;
 const iso = (fecha, hora = '19:00') => new Date(`2026-${fecha}T${hora}:00-03:00`).toISOString();
@@ -213,7 +224,7 @@ async function api(path, { method = 'POST', body, token } = {}) {
 }
 
 const { token, user } = await api('/api/auth/login', {
-  body: { email: EMAIL, password: PASSWORD },
+  body: { email: EMAIL, authKey },
 });
 
 const ownerId = user._id;

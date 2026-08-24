@@ -2,22 +2,30 @@
 
 App de entrenamiento offline-first con una capa de interpretación sobre los
 números. El documento de producto está en
-[PROYECTO-app-entrenamiento.md](PROYECTO-app-entrenamiento.md).
+[PROYECTO-app-entrenamiento.md](PROYECTO-app-entrenamiento.md) y la rutina
+cargada, en [rutina-4-dias.md](rutina-4-dias.md).
 
 ## Dónde vive
 
 | Pieza | Dónde | URL |
 |-------|-------|-----|
 | Frontend (PWA) | Cloudflare Pages, proyecto `tingym` | https://tingym.pages.dev |
-| API | Railway, proyecto `tingym`, servicio `api` | https://api-production-d27fa.up.railway.app |
-| Base | Railway, servicio `MongoDB` | interna, vía `MONGO_URL` |
+| API | Cloudflare Workers, `tingym-api` | https://tingym-api.segninitincho.workers.dev |
+| Base | Cloudflare D1, `tingym-db` | binding `DB` |
+
+Todo en la capa gratuita de Cloudflare y en la misma cuenta. **Costo cero.**
+
+Antes esto vivía en Railway con MongoDB (Express + driver de Mongo). Se migró
+porque Railway cobra por uso y la app no lo justifica. El backend de Express
+está en el historial de git, hasta el commit que lo eliminó, por si alguna vez
+hace falta volver.
 
 ## Estructura
 
 ```
-shared/   esquemas Zod + motor de progresión + análisis (cliente y servidor)
+shared/   esquemas Zod, catálogo, motor de progresión y análisis
 client/   React + Vite + Dexie + PWA
-server/   Express + MongoDB: auth, sync y coach
+worker/   Cloudflare Worker sobre D1: auth, sync y coach
 ```
 
 `shared` es el que importa: la lógica de progresión y los insights son
@@ -28,76 +36,44 @@ esa base — en el subsuelo del gimnasio no hay señal.
 
 ```bash
 npm install
-npm run dev          # cliente en localhost:5173
-npm run dev:server   # API (necesita MONGO_URL y JWT_SECRET)
-npm test             # tests del motor de progresión y de los insights
+npm run dev        # cliente en localhost:5173
+npm run dev:api    # Worker con D1 local
+npm test           # motor de progresión e insights
 ```
 
 ## Deploy
 
-Frontend:
-
 ```bash
-npm run build && npx wrangler pages deploy client/dist --project-name tingym --branch main
+npm run deploy:web   # build + Cloudflare Pages
+npm run deploy:api   # Worker
 ```
 
-API (desde la raíz del repo, con el CLI de Railway o el MCP):
+## Variables del Worker
 
-```bash
-railway up
-```
-
-## Variables del servicio `api`
+Se cargan con `wrangler secret put <NOMBRE>` desde `worker/`.
 
 | Variable | Para qué |
 |----------|----------|
-| `MONGO_URL` | Referencia a `${{MongoDB.MONGO_URL}}` |
-| `MONGO_DB` | `gymapp` |
-| `JWT_SECRET` | Firma de los tokens. Sin esto el server no arranca. |
-| `CORS_ORIGIN` | Orígenes permitidos, separados por coma |
-| `ANTHROPIC_API_KEY` | **Falta configurarla.** Sin ella `/api/coach/verdict` responde con el fallback determinista y `degraded: "sin API key configurada"`. |
+| `JWT_SECRET` | Firma de los tokens. Ya configurada. |
+| `ANTHROPIC_API_KEY` | **Sin configurar.** Sin ella `/api/coach/verdict` devuelve el fallback determinista, y la app ni ofrece el botón de análisis (`/api/health` informa `coach: false`). |
 | `ANTHROPIC_MODEL` | Opcional, por defecto `claude-sonnet-5` |
 
 La key de Anthropic nunca toca el cliente: es la razón por la que existe el
 backend.
 
-## Mover la base a Mongo Atlas (free tier)
+## Autenticación
 
-El M0 de Atlas es gratis de forma permanente y saca la mitad del consumo de
-Railway. Los pasos, en orden:
+El plan gratuito de Workers da 10 ms de CPU por request, así que bcrypt está
+descartado: el login se cortaría siempre. El key stretching lo hace el
+navegador (PBKDF2-SHA256, 210.000 iteraciones, ~50 ms) y el servidor sólo le
+aplica un SHA-256 con sal propia, que cuesta microsegundos.
 
-1. Crear el cluster en https://cloud.mongodb.com — plan **M0**, la región más
-   cercana (São Paulo).
-2. En *Database Access*, crear un usuario con permiso de lectura y escritura.
-3. En *Network Access*, permitir `0.0.0.0/0`. Railway no tiene IP fija, así
-   que restringir por IP no es una opción acá.
-4. Copiar la connection string (*Connect → Drivers*) y agregarle el nombre de
-   la base: `.../gymapp?retryWrites=true&w=majority`.
-5. Copiar los datos que ya están en Railway:
+Efecto secundario buscado: la contraseña en limpio nunca sale del dispositivo,
+y un dump de la base no alcanza para recuperarla.
 
-   ```bash
-   node server/scripts/migrar-mongo.js "<URI_RAILWAY>" "<URI_ATLAS>"
-   ```
-
-   La URI de Railway sale de `railway variables --service MongoDB --kv`, campo
-   `MONGO_PUBLIC_URL` (la interna, `mongodb.railway.internal`, sólo resuelve
-   dentro de Railway).
-
-6. Apuntar la API a la base nueva:
-
-   ```bash
-   railway variables --set "MONGO_URL=<URI_ATLAS>" --service api
-   ```
-
-7. Verificar que la API sigue viva y recién ahí borrar el servicio MongoDB de
-   Railway:
-
-   ```bash
-   curl https://api-production-d27fa.up.railway.app/api/health
-   ```
-
-El script copia por upsert sobre `_id`: se puede correr dos veces sin duplicar
-nada, y compara los conteos de las dos puntas antes de dar el ok.
+Los parámetros están en dos lugares —`client/src/db/authKey.js` y los scripts
+de `worker/scripts/`— y **tienen que coincidir**: si divergen, el login falla
+sin decir por qué.
 
 ## Cómo está resuelto el offline
 
@@ -106,5 +82,17 @@ nada, y compara los conteos de las dos puntas antes de dar el ok.
 - `POST /api/sync` empuja lo pendiente y baja lo que cambió desde `since`, con
   last-write-wins sobre `clientUpdatedAt`. Sin CRDTs: no hay edición
   concurrente real, es un usuario con varios dispositivos.
-- Los ids se generan en el cliente (uuid) y Mongo los acepta como `_id`, así
+- Los ids se generan en el cliente y D1 los acepta como clave primaria, así
   que crear una rutina sin señal no necesita después ningún remapeo.
+- El catálogo global usa ids derivados del nombre (`ex-press-militar-sentado`),
+  para que el mismo ejercicio tenga el mismo id en todos los dispositivos.
+
+## Esquema de la base
+
+Una tabla por colección, todas con la misma forma: lo que el sync filtra
+(`owner_id`, `updated_at`) en columnas, y el documento entero en `data` como
+JSON. Es el mismo modelo de documentos que en Mongo, sobre SQLite.
+
+```bash
+wrangler d1 execute tingym-db --remote --file=worker/schema.sql
+```
