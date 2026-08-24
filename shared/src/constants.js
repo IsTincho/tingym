@@ -32,3 +32,13 @@ export const LOAD_TYPE_LABELS = {
   bodyweight: 'Peso corporal',
   time: 'Tiempo',
 };
+
+export const MEAL_SLOTS = ['desayuno', 'almuerzo', 'merienda', 'cena', 'snack'];
+
+export const MEAL_SLOT_LABELS = {
+  desayuno: 'Desayuno',
+  almuerzo: 'Almuerzo',
+  merienda: 'Merienda',
+  cena: 'Cena',
+  snack: 'Snack',
+};

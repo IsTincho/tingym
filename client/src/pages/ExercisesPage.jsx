@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import {
   LOAD_TYPES,
@@ -54,7 +55,12 @@ export default function ExercisesPage() {
   return (
     <div>
       <header className="px-4 pt-[max(1rem,env(safe-area-inset-top))] pb-3 flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Ejercicios</h1>
+        <div>
+          <Link to="/rutinas" className="text-muted text-sm">
+            ← Rutinas
+          </Link>
+          <h1 className="text-2xl font-bold">Ejercicios</h1>
+        </div>
         <Button onClick={() => setCreating(true)}>Nuevo</Button>
       </header>
 

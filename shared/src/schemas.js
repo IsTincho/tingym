@@ -117,6 +117,22 @@ export const bodyweightEntrySchema = z.object({
   clientUpdatedAt: isoDate,
 });
 
+// Registro de comidas. Es alcance agregado sobre el documento maestro, y a
+// proposito queda como un diario, no como un contador: guarda lo que comiste
+// en texto y deja kcal/proteina opcionales. El guardarrail de la seccion 6
+// sigue en pie —la app no da consejos de nutricion, solo registra.
+export const mealSchema = z.object({
+  _id: idSchema,
+  ownerId: idSchema,
+  date: isoDate,
+  slot: z.enum(['desayuno', 'almuerzo', 'merienda', 'cena', 'snack']),
+  description: z.string().trim().min(1).max(300),
+  kcal: z.number().int().min(0).max(10000).nullable().default(null),
+  proteinG: z.number().min(0).max(500).nullable().default(null),
+  syncState: z.enum(['local', 'synced']).default('local'),
+  clientUpdatedAt: isoDate,
+});
+
 export const userSchema = z.object({
   _id: idSchema,
   email: z.string().email(),

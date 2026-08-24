@@ -1,53 +1,84 @@
 import { useEffect, useState } from 'react';
-import { NavLink, Navigate, Route, Routes } from 'react-router-dom';
+import { NavLink, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { bootstrap } from './db/repo.js';
+import { startBackgroundSync } from './db/sync.js';
+import HomePage from './pages/HomePage.jsx';
+import SessionPage from './pages/SessionPage.jsx';
+import ProgressPage from './pages/ProgressPage.jsx';
+import ExerciseDetailPage from './pages/ExerciseDetailPage.jsx';
 import RoutinesPage from './pages/RoutinesPage.jsx';
 import RoutineEditPage from './pages/RoutineEditPage.jsx';
 import ExercisesPage from './pages/ExercisesPage.jsx';
+import WeightPage from './pages/WeightPage.jsx';
+import MealsPage from './pages/MealsPage.jsx';
+import AccountPage from './pages/AccountPage.jsx';
 
 const TABS = [
+  { to: '/hoy', label: 'Hoy' },
+  { to: '/progreso', label: 'Progreso' },
   { to: '/rutinas', label: 'Rutinas' },
-  { to: '/ejercicios', label: 'Ejercicios' },
+  { to: '/comidas', label: 'Comidas' },
+  { to: '/peso', label: 'Peso' },
 ];
 
 export default function App() {
   const [ready, setReady] = useState(false);
+  const { pathname } = useLocation();
 
   useEffect(() => {
     // Seed + id local. Todo local: no hay await de red en el arranque.
-    bootstrap().then(() => setReady(true));
+    let detener = () => {};
+    bootstrap().then(() => {
+      setReady(true);
+      // El sync arranca despues del bootstrap y corre en background: la UI
+      // nunca espera a la red para dejarte anotar.
+      detener = startBackgroundSync();
+    });
+    return () => detener();
   }, []);
+
+  // Entrenando, la barra estorba: la pantalla de sesion va a pantalla completa.
+  const enSesion = pathname.startsWith('/sesion/');
 
   if (!ready) return null;
 
   return (
     <div className="min-h-full flex flex-col">
-      <main className="flex-1 pb-20">
+      <main className={enSesion ? 'flex-1 pb-6' : 'flex-1 pb-20'}>
         <Routes>
-          <Route path="/" element={<Navigate to="/rutinas" replace />} />
+          <Route path="/" element={<Navigate to="/hoy" replace />} />
+          <Route path="/hoy" element={<HomePage />} />
+          <Route path="/sesion/:sessionId" element={<SessionPage />} />
+          <Route path="/progreso" element={<ProgressPage />} />
+          <Route path="/progreso/:exerciseId" element={<ExerciseDetailPage />} />
           <Route path="/rutinas" element={<RoutinesPage />} />
           <Route path="/rutinas/:routineId" element={<RoutineEditPage />} />
           <Route path="/ejercicios" element={<ExercisesPage />} />
-          <Route path="*" element={<Navigate to="/rutinas" replace />} />
+          <Route path="/comidas" element={<MealsPage />} />
+          <Route path="/peso" element={<WeightPage />} />
+          <Route path="/cuenta" element={<AccountPage />} />
+          <Route path="*" element={<Navigate to="/hoy" replace />} />
         </Routes>
       </main>
 
-      <nav className="fixed bottom-0 inset-x-0 bg-surface/95 backdrop-blur border-t border-line pb-[env(safe-area-inset-bottom)]">
-        <div className="flex">
-          {TABS.map((t) => (
-            <NavLink
-              key={t.to}
-              to={t.to}
-              className={({ isActive }) =>
-                'flex-1 text-center py-4 font-semibold ' +
-                (isActive ? 'text-accent' : 'text-muted')
-              }
-            >
-              {t.label}
-            </NavLink>
-          ))}
-        </div>
-      </nav>
+      {!enSesion && (
+        <nav className="fixed bottom-0 inset-x-0 bg-surface/95 backdrop-blur border-t border-line pb-[env(safe-area-inset-bottom)]">
+          <div className="flex">
+            {TABS.map((t) => (
+              <NavLink
+                key={t.to}
+                to={t.to}
+                className={({ isActive }) =>
+                  'flex-1 text-center py-4 text-sm font-semibold ' +
+                  (isActive ? 'text-accent' : 'text-muted')
+                }
+              >
+                {t.label}
+              </NavLink>
+            ))}
+          </div>
+        </nav>
+      )}
     </div>
   );
 }

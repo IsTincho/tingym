@@ -1,10 +1,19 @@
 {
   "name": "gymapp",
   "private": true,
-  "workspaces": ["shared", "client"],
+  "workspaces": [
+    "shared",
+    "client",
+    "server"
+  ],
   "scripts": {
     "dev": "npm run dev -w client",
     "build": "npm run build -w client",
-    "preview": "npm run preview -w client"
+    "preview": "npm run preview -w client",
+    "test": "npm run test -w shared",
+    "dev:server": "npm run dev -w server"
+  },
+  "engines": {
+    "node": ">=22"
   }
 }

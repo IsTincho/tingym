@@ -23,7 +23,12 @@ export default function RoutinesPage() {
     <div>
       <header className="px-4 pt-[max(1rem,env(safe-area-inset-top))] pb-3 flex items-center justify-between">
         <h1 className="text-2xl font-bold">Rutinas</h1>
-        <Button onClick={() => setCreating(true)}>Nueva</Button>
+        <div className="flex items-center gap-3">
+          <Link to="/ejercicios" className="text-sm text-muted min-h-11 flex items-center">
+            Ejercicios
+          </Link>
+          <Button onClick={() => setCreating(true)}>Nueva</Button>
+        </div>
       </header>
 
       {routines === null ? null : routines.length === 0 ? (
