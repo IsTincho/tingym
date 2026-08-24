@@ -162,6 +162,26 @@ export function startBackgroundSync({ everyMs = 5 * 60_000 } = {}) {
 // --- coach (V2) -----------------------------------------------------------
 
 /**
+ * ¿Hay capa de IA disponible? Se consulta una vez por sesion de app y se
+ * cachea: sin API key configurada en el servidor, la UI ni siquiera ofrece el
+ * analisis, porque el veredicto de la regla local ya esta en pantalla.
+ */
+let coachDisponible = null;
+
+export async function isCoachEnabled() {
+  if (coachDisponible !== null) return coachDisponible;
+  if (!API || !navigator.onLine) return false;
+  try {
+    const res = await fetch(`${API}/api/health`);
+    const data = await res.json();
+    coachDisponible = Boolean(data.coach);
+  } catch {
+    coachDisponible = false;
+  }
+  return coachDisponible;
+}
+
+/**
  * Pide el veredicto de la IA. El llamador siempre tiene el veredicto
  * determinista a mano, asi que un fallo acá no rompe nada: devuelve null.
  */

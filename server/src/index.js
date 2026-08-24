@@ -13,7 +13,11 @@ const origins = (process.env.CORS_ORIGIN ?? '*').split(',').map((s) => s.trim())
 app.use(cors({ origin: origins.includes('*') ? true : origins }));
 app.use(express.json({ limit: '5mb' })); // una sync grande son varias sesiones
 
-app.get('/api/health', (_req, res) => res.json({ ok: true }));
+// `coach` le dice al cliente si la capa de IA esta configurada. Sin esto la
+// app tendria que ofrecer un boton de analisis que siempre falla.
+app.get('/api/health', (_req, res) =>
+  res.json({ ok: true, coach: Boolean(process.env.ANTHROPIC_API_KEY) }),
+);
 
 app.use('/api/auth', authRoutes);
 app.use('/api/sync', syncRoutes);

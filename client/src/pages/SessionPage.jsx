@@ -15,7 +15,7 @@ import {
   saveVerdict,
   substituteEntry,
 } from '../db/sessionRepo.js';
-import { requestVerdict } from '../db/sync.js';
+import { isCoachEnabled, requestVerdict } from '../db/sync.js';
 import { Button, Card, EmptyState, Field, Input } from '../ui/primitives.jsx';
 import Sheet from '../ui/Sheet.jsx';
 import VerdictChip from '../ui/VerdictChip.jsx';
@@ -268,6 +268,15 @@ function EntryCard({
 // determinista y el boton simplemente avisa que no se pudo.
 function AnalyzeButton({ sessionId, entryIndex, entry, exercise, fallback }) {
   const [estado, setEstado] = useState('idle');
+  const [disponible, setDisponible] = useState(false);
+
+  useEffect(() => {
+    let vivo = true;
+    isCoachEnabled().then((v) => vivo && setDisponible(v));
+    return () => {
+      vivo = false;
+    };
+  }, []);
 
   async function analizar() {
     setEstado('cargando');
@@ -296,6 +305,9 @@ function AnalyzeButton({ sessionId, entryIndex, entry, exercise, fallback }) {
     setEstado('idle');
   }
 
+  // Sin capa de IA configurada no se ofrece el analisis: la lectura de la
+  // regla local ya esta arriba y alcanza para decidir.
+  if (!disponible) return null;
   if (!entry.target && !fallback) return null;
 
   return (
