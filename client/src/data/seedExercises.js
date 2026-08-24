@@ -1,0 +1,41 @@
+// Catalogo base (ownerId null = global). Se seedea una sola vez; el usuario
+// puede agregar los suyos encima.
+const raw = [
+  ['Dominadas', 'espalda', 'pull', 'bodyweight', 'Escápulas abajo antes de tirar'],
+  ['Remo con barra', 'espalda', 'pull', 'barbell', 'Torso a 45°, tirá al ombligo'],
+  ['Remo con mancuerna', 'espalda', 'pull', 'dumbbell', ''],
+  ['Jalón al pecho', 'espalda', 'pull', 'cable', ''],
+  ['Remo en polea baja', 'espalda', 'pull', 'cable', ''],
+  ['Press militar sentado', 'hombros', 'push', 'dumbbell', 'Codo fijo, bajá lento'],
+  ['Press militar con barra', 'hombros', 'push', 'barbell', ''],
+  ['Elevaciones laterales', 'hombros', 'isolation', 'dumbbell', 'Sin impulso de cadera'],
+  ['Pájaros', 'hombros', 'isolation', 'dumbbell', ''],
+  ['Press banca', 'pecho', 'push', 'barbell', 'Escápulas retraídas'],
+  ['Press inclinado con mancuernas', 'pecho', 'push', 'dumbbell', ''],
+  ['Aperturas en polea', 'pecho', 'isolation', 'cable', ''],
+  ['Fondos', 'pecho', 'push', 'bodyweight', ''],
+  ['Curl con barra', 'biceps', 'isolation', 'barbell', ''],
+  ['Curl con mancuernas', 'biceps', 'isolation', 'dumbbell', ''],
+  ['Curl martillo', 'biceps', 'isolation', 'dumbbell', ''],
+  ['Extensión en polea', 'triceps', 'isolation', 'cable', ''],
+  ['Press francés', 'triceps', 'isolation', 'barbell', ''],
+  ['Sentadilla', 'piernas', 'squat', 'barbell', 'Rodilla sigue la punta del pie'],
+  ['Prensa', 'piernas', 'squat', 'machine', ''],
+  ['Peso muerto', 'piernas', 'hinge', 'barbell', 'Barra pegada a la pierna'],
+  ['Peso muerto rumano', 'piernas', 'hinge', 'barbell', ''],
+  ['Zancadas', 'piernas', 'squat', 'dumbbell', ''],
+  ['Curl femoral', 'piernas', 'isolation', 'machine', ''],
+  ['Extensión de cuádriceps', 'piernas', 'isolation', 'machine', ''],
+  ['Elevación de gemelos', 'piernas', 'isolation', 'machine', ''],
+  ['Plancha', 'core', 'static', 'time', 'Glúteo apretado, cadera neutra'],
+  ['Rueda abdominal', 'core', 'static', 'bodyweight', ''],
+  ['Elevación de piernas colgado', 'core', 'isolation', 'bodyweight', ''],
+];
+
+export const SEED_EXERCISES = raw.map(([name, muscleGroup, pattern, loadType, notes]) => ({
+  name,
+  muscleGroup,
+  pattern,
+  loadType,
+  notes,
+}));

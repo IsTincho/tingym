@@ -1,0 +1,43 @@
+@import 'tailwindcss';
+
+/* Un solo tema (oscuro): el doc descarta el toggle claro/oscuro en V1. */
+@theme {
+  --color-ink: #0b0f14;
+  --color-surface: #131a22;
+  --color-surface-2: #1c2632;
+  --color-line: #263140;
+  --color-text: #e6edf5;
+  --color-muted: #8ea0b5;
+  --color-accent: #22d3ee;
+  --color-danger: #f87171;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  background-color: var(--color-ink);
+  color: var(--color-text);
+  overscroll-behavior-y: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Se usa parado y con una mano: nada de zoom accidental al tocar un input. */
+input,
+select,
+textarea,
+button {
+  font-size: 16px;
+}
+
+input[type='number'] {
+  -moz-appearance: textfield;
+}
+input[type='number']::-webkit-outer-spin-button,
+input[type='number']::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
