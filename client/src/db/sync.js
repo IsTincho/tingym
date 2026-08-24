@@ -58,6 +58,15 @@ export async function login({ email, password }) {
   return data.user;
 }
 
+export async function changePassword({ currentPassword, newPassword }) {
+  const data = await call('/api/auth/password', {
+    method: 'PATCH',
+    body: { currentPassword, newPassword },
+  });
+  await setMeta('authToken', data.token);
+  return true;
+}
+
 async function wipeLocalData() {
   await Promise.all(COLLECTIONS.map((c) => db[c].clear()));
   await setMeta('lastSyncAt', null);

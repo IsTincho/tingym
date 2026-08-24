@@ -81,4 +81,38 @@ router.get('/me', requireAuth, async (req, res) => {
   return res.json({ user });
 });
 
+const passwordChange = z.object({
+  currentPassword: z.string().min(1),
+  newPassword: z.string().min(8, 'La nueva contraseña necesita al menos 8 caracteres'),
+});
+
+router.patch('/password', requireAuth, async (req, res) => {
+  const parsed = passwordChange.safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: parsed.error.issues[0].message });
+
+  const user = await db().collection('users').findOne({ _id: req.user._id });
+  if (!user) return res.status(404).json({ error: 'Usuario inexistente' });
+
+  // Se pide la actual aunque el token ya autentique: un token robado no
+  // alcanza para quedarse con la cuenta cambiandole la contraseña.
+  const ok = await bcrypt.compare(parsed.data.currentPassword, user.passwordHash);
+  if (!ok) return res.status(401).json({ error: 'La contraseña actual no coincide' });
+
+  await db()
+    .collection('users')
+    .updateOne(
+      { _id: user._id },
+      {
+        $set: {
+          passwordHash: await bcrypt.hash(parsed.data.newPassword, 12),
+          updatedAt: new Date().toISOString(),
+        },
+      },
+    );
+
+  // Token nuevo: el anterior sigue siendo valido hasta que venza, pero el
+  // cliente se queda con el recien emitido.
+  return res.json({ token: signToken({ ...user, role: user.role }) });
+});
+
 export default router;

@@ -1,9 +1,68 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { getMeta } from '../db/db.js';
-import { clearSession, getToken, login, register, sync } from '../db/sync.js';
+import { changePassword, clearSession, getToken, login, register, sync } from '../db/sync.js';
 import { Button, Card, Field, Input } from '../ui/primitives.jsx';
 import { relativeDate } from '../lib/format.js';
+
+function PasswordForm() {
+  const [abierto, setAbierto] = useState(false);
+  const [form, setForm] = useState({ currentPassword: '', newPassword: '' });
+  const [estado, setEstado] = useState({ error: '', ok: false });
+
+  if (!abierto) {
+    return (
+      <Button variant="secondary" className="w-full" onClick={() => setAbierto(true)}>
+        Cambiar contraseña
+      </Button>
+    );
+  }
+
+  return (
+    <Card className="p-4">
+      <form
+        className="space-y-4"
+        onSubmit={async (e) => {
+          e.preventDefault();
+          setEstado({ error: '', ok: false });
+          try {
+            await changePassword(form);
+            setForm({ currentPassword: '', newPassword: '' });
+            setEstado({ error: '', ok: true });
+            setAbierto(false);
+          } catch (err) {
+            setEstado({ error: err.message, ok: false });
+          }
+        }}
+      >
+        <Field label="Contraseña actual">
+          <Input
+            type="password"
+            autoComplete="current-password"
+            value={form.currentPassword}
+            onChange={(e) => setForm({ ...form, currentPassword: e.target.value })}
+          />
+        </Field>
+        <Field label="Contraseña nueva" hint="Mínimo 8 caracteres" error={estado.error}>
+          <Input
+            type="password"
+            autoComplete="new-password"
+            value={form.newPassword}
+            onChange={(e) => setForm({ ...form, newPassword: e.target.value })}
+          />
+        </Field>
+        <div className="flex gap-2">
+          <Button type="submit" className="flex-1" disabled={form.newPassword.length < 8}>
+            Guardar
+          </Button>
+          <Button type="button" variant="ghost" onClick={() => setAbierto(false)}>
+            Cancelar
+          </Button>
+        </div>
+      </form>
+    </Card>
+  );
+}
 
 export default function AccountPage() {
   const [estado, setEstado] = useState(null);
@@ -90,6 +149,8 @@ export default function AccountPage() {
             >
               {ocupado ? 'Sincronizando…' : 'Sincronizar ahora'}
             </Button>
+
+            <PasswordForm />
 
             <Button
               variant="danger"

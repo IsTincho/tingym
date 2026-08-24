@@ -21,6 +21,16 @@ db.version(2).stores({
   meals: '_id, ownerId, date',
 });
 
+// v3: el catalogo global paso a tener ids derivados del nombre. Los globales
+// viejos, con id aleatorio, quedarian como duplicados y hay que sacarlos; los
+// del usuario no se tocan.
+db.version(3)
+  .stores({})
+  .upgrade(async (tx) => {
+    await tx.table('exercises').filter((e) => e.ownerId == null).delete();
+    await tx.table('meta').delete('seededExercises');
+  });
+
 export async function getMeta(key, fallback = null) {
   const row = await db.meta.get(key);
   return row ? row.value : fallback;

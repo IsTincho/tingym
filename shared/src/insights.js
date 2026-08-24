@@ -178,22 +178,48 @@ export function buildInsights({ sessions = [], bodyweight = [], exercisesById, n
   }
 
   // --- volumen semana contra semana ---
-  const semanas = aggregateSessions(done, 'week');
-  if (semanas.length >= 2 && semanas[1].volumeKg > 0) {
-    const cambio = (semanas[0].volumeKg - semanas[1].volumeKg) / semanas[1].volumeKg;
+  //
+  // La semana en curso esta a medio hacer: compararla entera contra la
+  // anterior diria "caiste 55%" todos los lunes. Se compara contra el mismo
+  // tramo de la semana pasada, hasta el mismo dia.
+  const inicioSemana = startOfWeek(now);
+  const transcurrido = now - inicioSemana;
+
+  // El corte superior es inclusive en las dos ventanas: la sesión que se acaba
+  // de terminar cae justo en `now` y tiene que contar.
+  const volumenDe = (desde, hasta) =>
+    done
+      .filter((s) => {
+        const d = new Date(s.date);
+        return d >= desde && d <= hasta;
+      })
+      .reduce(
+        (acc, s) =>
+          acc +
+          s.entries.reduce((a, e) => a + totalVolume(e.sets.filter((x) => Number(x.reps) > 0)), 0),
+        0,
+      );
+
+  const semanaPasada = new Date(inicioSemana.getTime() - 7 * DAY);
+  const estaSemana = volumenDe(inicioSemana, now);
+  const mismoTramoPasado = volumenDe(semanaPasada, new Date(semanaPasada.getTime() + transcurrido));
+
+  if (mismoTramoPasado > 0) {
+    const cambio = (estaSemana - mismoTramoPasado) / mismoTramoPasado;
+    const detalle = `${Math.round(estaSemana)} kg contra ${Math.round(mismoTramoPasado)} kg a esta altura de la semana pasada.`;
     if (cambio <= -0.25) {
       out.push({
         id: 'volumen-baja',
         severity: 'media',
-        title: `El volumen cayó ${Math.round(Math.abs(cambio) * 100)}% respecto de la semana pasada`,
-        body: `${Math.round(semanas[0].volumeKg)} kg contra ${Math.round(semanas[1].volumeKg)} kg totales.`,
+        title: `El volumen va ${Math.round(Math.abs(cambio) * 100)}% abajo de la semana pasada`,
+        body: detalle,
       });
     } else if (cambio >= 0.4) {
       out.push({
         id: 'volumen-salto',
         severity: 'media',
-        title: `El volumen saltó ${Math.round(cambio * 100)}% en una semana`,
-        body: 'Saltos así de golpe son de donde suelen salir las molestias. Sostenelo antes de subir más.',
+        title: `El volumen va ${Math.round(cambio * 100)}% arriba de la semana pasada`,
+        body: `${detalle} Saltos así de golpe son de donde suelen salir las molestias.`,
       });
     }
   }

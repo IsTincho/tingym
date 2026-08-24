@@ -1,6 +1,11 @@
 import { db, getMeta, setMeta } from './db.js';
-import { SEED_EXERCISES } from '../data/seedExercises.js';
-import { newId, nowIso, exerciseSchema, routineSchema } from '@gym/shared';
+import {
+  SEED_EXERCISES,
+  newId,
+  nowIso,
+  exerciseSchema,
+  routineSchema,
+} from '@gym/shared';
 
 // --- bootstrap -------------------------------------------------------------
 
@@ -20,13 +25,9 @@ export async function bootstrap() {
   if (!(await getMeta('seededExercises'))) {
     const ts = nowIso();
     await db.exercises.bulkPut(
-      SEED_EXERCISES.map((e) => ({
-        _id: newId(),
-        ownerId: null, // catalogo global
-        ...e,
-        createdAt: ts,
-        updatedAt: ts,
-      })),
+      // Los _id vienen del catalogo compartido y son estables entre
+      // dispositivos, asi que un re-seed nunca duplica.
+      SEED_EXERCISES.map((e) => ({ ...e, createdAt: ts, updatedAt: ts })),
     );
     await setMeta('seededExercises', true);
   }

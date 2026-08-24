@@ -162,6 +162,37 @@ describe('buildInsights', () => {
     expect(r.some((x) => x.id === 'abandono-hombros')).toBe(false);
   });
 
+  it('no acusa caída de volumen por comparar una semana a medio hacer', () => {
+    // Jueves con una sesión esta semana contra tres la semana pasada, pero el
+    // sábado y el domingo pasados caen fuera del tramo comparable: hasta el
+    // jueves, ambas semanas llevan lo mismo.
+    const r = buildInsights({
+      sessions: [
+        session(daysAgo(0), [['press', [set(40, 8)]]]), // jueves de esta semana
+        session(daysAgo(8), [['press', [set(40, 8)]]]), // miércoles de la pasada
+        session(daysAgo(5), [['press', [set(40, 8)]]]), // sábado: fuera del tramo
+        session(daysAgo(4), [['press', [set(40, 8)]]]), // domingo: fuera del tramo
+      ],
+      bodyweight: [],
+      exercisesById: catalogo,
+      now: NOW,
+    });
+    expect(r.some((x) => x.id === 'volumen-baja')).toBe(false);
+  });
+
+  it('sí marca la caída cuando el mismo tramo trae menos volumen', () => {
+    const r = buildInsights({
+      sessions: [
+        session(daysAgo(0), [['press', [set(20, 5)]]]),
+        session(daysAgo(8), [['press', [set(40, 10), set(40, 10), set(40, 10)]]]),
+      ],
+      bodyweight: [],
+      exercisesById: catalogo,
+      now: NOW,
+    });
+    expect(r.some((x) => x.id === 'volumen-baja')).toBe(true);
+  });
+
   it('ordena por severidad: lo urgente primero', () => {
     const r = buildInsights({
       sessions: [session(daysAgo(9), [['press', [set(40, 8)]]])],
