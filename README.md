@@ -3,7 +3,8 @@
 App de entrenamiento offline-first con una capa de interpretación sobre los
 números. El documento de producto está en
 [PROYECTO-app-entrenamiento.md](PROYECTO-app-entrenamiento.md) y la rutina
-cargada, en [rutina-4-dias.md](rutina-4-dias.md).
+cargada, en [rutina-4-dias.md](rutina-4-dias.md). Lo que viene y todavía no se
+decidió está en [PROXIMOS-PASOS.md](PROXIMOS-PASOS.md).
 
 ## Dónde vive
 
@@ -33,6 +34,10 @@ API y mismo esquema de auth, así que se vuelve a él cambiando `VITE_API_URL`.
 
 Nada bloqueante. Sólo `ANTHROPIC_API_KEY`, si alguna vez se quiere la capa de
 IA; sin ella la app decide con la regla local y ni ofrece el botón.
+
+Las decisiones abiertas (macros de las comidas, imágenes de ejercicios y el
+modelo de entrenador/alumno) están investigadas y sin implementar en
+[PROXIMOS-PASOS.md](PROXIMOS-PASOS.md).
 
 ## Secretos
 
