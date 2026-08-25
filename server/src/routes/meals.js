@@ -96,7 +96,10 @@ router.post('/parse', requireAuth, rateLimit({ windowMs: 60_000, max: 30 }), asy
   const { ok, data, motivo } = await llmJson({
     system: SYSTEM,
     user: description,
-    maxTokens: 200,
+    // La respuesta son ~22 tokens. El resto es presupuesto para que los
+    // modelos que razonan piensen antes: con 200 truncaban el JSON al medio.
+    // Ver la nota en llm.js.
+    maxTokens: 1500,
   });
   // Sin key, sin señal o con el límite agotado no hay estimación posible, y se
   // dice claro. La app ya sabe anotar a mano: ese es el modo degradado, y es

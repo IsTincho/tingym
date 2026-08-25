@@ -27,11 +27,15 @@ const PROVEEDORES = {
     // 15 req/min y 1.500 por dia en el plan gratis. Para un usuario que anota
     // unas diez series y tres comidas por dia, sobra por dos ordenes.
     //
-    // Pinneado y no `gemini-flash-latest` porque un alias puede cambiarte el
-    // comportamiento abajo de los pies sin avisar. La contra es que envejece:
-    // Google ya apago gemini-2.0-flash. Cuando pase, la API tira 404 y el
+    // 3.6 y no 3.7: medido contra la API real, 3.7-flash devuelve 503
+    // ("high demand") o cuelga mas de 60s en el plan gratis. 3.6 es ademas el
+    // reemplazo que sugiere Google en el 404 de los modelos 2.5.
+    //
+    // Pinneado y no `gemini-flash-latest` porque el alias apunta hoy al 3.7
+    // saturado. La contra de pinnear es que envejece: Google ya apago 2.0 y
+    // 2.5 dejo de estar para cuentas nuevas. Cuando pase, la API tira 404 y el
     // mensaje de abajo dice exactamente que variable tocar.
-    modelo: 'gemini-3.7-flash',
+    modelo: 'gemini-3.6-flash',
   },
   groq: {
     url: 'https://api.groq.com/openai/v1/chat/completions',
@@ -116,8 +120,20 @@ export function extraerJson(texto) {
  * El timeout no es opcional. Sin el, una llamada colgada deja al usuario
  * mirando un boton en "Estimando..." para siempre, y en el gimnasio la senal
  * se corta a la mitad todo el tiempo.
+ *
+ * OJO CON `maxTokens`: en los modelos que razonan (toda la familia Gemini 3.x)
+ * el presupuesto se gasta PRIMERO pensando, y la respuesta sale de lo que
+ * sobra. Medido contra la API real: con 200 tokens, gemini-3.6-flash devuelve
+ * `{"kcal": 580, "proteinG": 30,` —cortado al medio, con finish_reason
+ * "length"— y el JSON no parsea. No es un error de la API ni del prompt: es el
+ * presupuesto. Por eso los que llaman piden miles de tokens para respuestas de
+ * veinte. En un modelo que no razona sobra y no cuesta nada, porque igual
+ * frena en cuanto cierra la llave.
+ *
+ * El timeout por defecto es alto por la misma razon: pensar tarda. La mediana
+ * medida en el plan gratis de Gemini fue 20 segundos.
  */
-export async function llmJson({ system, user, maxTokens = 400, timeoutMs = 20_000 }) {
+export async function llmJson({ system, user, maxTokens = 2000, timeoutMs = 30_000 }) {
   const cfg = llmConfig();
   if (!cfg) return { ok: false, motivo: 'sin API key configurada' };
 

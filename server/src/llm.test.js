@@ -83,7 +83,7 @@ describe('llmConfig', () => {
     const c = llmConfig();
     expect(c.nombre).toBe('gemini');
     expect(c.url).toContain('generativelanguage.googleapis.com');
-    expect(c.modelo).toBe('gemini-3.7-flash');
+    expect(c.modelo).toBe('gemini-3.6-flash');
   });
 
   // El punto de toda esta capa: cambiar de proveedor es una variable, no una

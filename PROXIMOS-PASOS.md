@@ -337,6 +337,45 @@ usuario solo.
 texto más personal —una molestia, una lesión—, la fila de privacidad pasa a
 pesar y Groq es un `LLM_PROVIDER=groq`.
 
+### Medido contra la API real — 25/8/2026
+
+Con la key cargada, la feature se probó de verdad. Dos hallazgos.
+
+**Bug real: `max_tokens` estaba muy bajo.** Toda la familia Gemini 3.x razona
+antes de responder, y el presupuesto de tokens se gasta PRIMERO pensando. Con
+200 tokens, `gemini-3.6-flash` devolvía `{"kcal": 580, "proteinG": 30,` —
+cortado al medio, `finish_reason: "length"`— y el JSON no parseaba. No era la
+API ni el prompt: era el presupuesto. Ahora se piden 1.500 para una respuesta
+de 22 tokens, y en un modelo que no razona eso no cuesta nada porque frena en
+cuanto cierra la llave.
+
+**El plan gratis de Gemini está congestionado.** Ocho comidas por modelo:
+
+| | `3.6-flash` | `3.5-flash-lite` |
+|---|---|---|
+| Respuestas válidas | 6/8 (2× HTTP 503) | 3/8 (5 timeouts >40 s) |
+| Latencia mediana | **20,2 s** | 5,1 s |
+| Máxima | 32,6 s | >40 s |
+
+`gemini-3.7-flash` quedó descartado: devuelve 503 "high demand" o cuelga más de
+60 s. `gemini-flash-latest` apunta ahí, así que tampoco sirve. Y `2.5-flash` ya
+tira 404 para cuentas nuevas — el pinneo envejeció en una hora, tal como
+advertía la sección de más arriba.
+
+La calidad cuando responde está bien: asado con chorizo y morcilla 950 kcal /
+60 g, milanesa con puré 670 / 32. Plausibles. **El problema no es el modelo, es
+la disponibilidad.**
+
+Un botón que tarda 20 segundos de mediana y falla una de cada cuatro veces es
+peor que no tener botón. Con la evidencia en la mano, **la decisión de Gemini
+sobre Groq queda para revisar**: se eligió Gemini por calidad de modelo, y esa
+ventaja no sirve de nada si la llamada no vuelve. Groq corre modelos abiertos
+en hardware propio y es de los proveedores más rápidos que hay; falta medirlo
+con una key para comparar en igualdad de condiciones. Es `LLM_PROVIDER=groq`
+más la key, sin tocar código.
+
+---
+
 ### Lo que hay que mirar cuando esté andando
 
 El modelo ya no es Claude. Dos cosas a vigilar:

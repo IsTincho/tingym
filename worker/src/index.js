@@ -305,7 +305,9 @@ async function veredicto(request, env, usuario) {
       },
       body: JSON.stringify({
         model: llm.modelo,
-        max_tokens: 400,
+        // Alto a proposito: los modelos que razonan gastan el presupuesto
+        // pensando y truncan la respuesta. Ver server/src/llm.js.
+        max_tokens: 2500,
         // Baja a proposito: se piden datos, no prosa.
         temperature: 0.3,
         messages: [

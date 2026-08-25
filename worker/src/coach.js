@@ -83,7 +83,7 @@ export function parseVerdict(text) {
 const PROVEEDORES = {
   gemini: {
     url: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',
-    modelo: 'gemini-3.7-flash',
+    modelo: 'gemini-3.6-flash',
   },
   groq: {
     url: 'https://api.groq.com/openai/v1/chat/completions',

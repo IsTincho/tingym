@@ -152,7 +152,7 @@ cambió una vez; la segunda no tiene que doler.
 | **Gemini** (default) | Sí, sin tarjeta | 15 req/min, 1.500/día | **Sí**, los términos del free tier lo permiten |
 | Groq | Sí, sin tarjeta | 30 req/min, 1.000/día | **No**, tampoco en el plan gratis |
 
-Gemini es el default porque `gemini-3.7-flash` es bastante mejor que
+Gemini es el default porque `gemini-3.6-flash` es bastante mejor que
 `llama-3.3-70b` en las dos cosas que esta app necesita: **español rioplatense
 con nombres de comida local** —milanesa, facturas, provoleta— y **obedecer un
 "devolvé sólo JSON"**. Los dos son los riesgos abiertos de esta feature, así
@@ -175,10 +175,19 @@ La key se saca en https://aistudio.google.com/apikey, sin tarjeta. Para pasarse
 a Groq alcanza con `LLM_PROVIDER=groq` y una key de
 https://console.groq.com/keys.
 
-El modelo va pinneado y no en un alias tipo `gemini-flash-latest`, porque un
-alias puede cambiar el comportamiento sin aviso. La contra es que envejece:
-Google ya apagó `gemini-2.0-flash`. Cuando pase, la API responde 404 y el
-mensaje de error nombra el modelo y te dice que toques `LLM_MODEL`.
+El modelo va pinneado y no en un alias tipo `gemini-flash-latest`: hoy ese
+alias apunta a `gemini-3.7-flash`, que en el plan gratis devuelve 503 o cuelga
+más de 60 s. La contra de pinnear es que envejece —`2.0-flash` está apagado y
+`2.5-flash` ya no se da a cuentas nuevas—, así que cuando pase, la API responde
+404 y el mensaje de error nombra el modelo y te dice que toques `LLM_MODEL`.
+
+**Ojo con `max_tokens` si tocás el código.** Los modelos que razonan gastan el
+presupuesto pensando y la respuesta sale de lo que sobra: con 200 tokens el
+JSON volvía cortado al medio. Por eso se piden miles para respuestas de veinte.
+
+**Latencia medida en el plan gratis de Gemini:** mediana 20 s, y una de cada
+cuatro llamadas falla con 503. La calidad de las estimaciones es buena, pero la
+disponibilidad no. Ver `PROXIMOS-PASOS.md` sección 6.
 
 `/api/health` devuelve qué proveedor y modelo quedaron activos —nunca la key—,
 así que después de tocar variables en Railway se confirma de un vistazo.
