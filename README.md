@@ -11,41 +11,34 @@ cargada, en [rutina-4-dias.md](rutina-4-dias.md).
 |-------|-------|--------|
 | Repo | https://github.com/IsTincho/tingym (privado) | ✅ |
 | Frontend (PWA) | Cloudflare Pages, proyecto `tingym` → https://tingym.pages.dev | ✅ |
-| API | Railway, proyecto `tingym`, servicio `api` (Express) | ⏳ falta `MONGO_URL` |
-| Base | MongoDB Atlas M0 | ⏳ falta crear el cluster |
+| API | Railway, `tingym`/`api` (Express) → https://api-production-9963.up.railway.app | ✅ |
+| Base | MongoDB Atlas M0, `cluster0`, base `gymapp` | ✅ |
+
+Cada push a `main` despliega la API sola. `railway.json` trae `watchPatterns`,
+así que un cambio que toque únicamente `client/` no dispara deploy de la API.
+
+**El Root Directory del servicio tiene que ser `/`.** Railway sugiere `server`
+al detectar el monorepo, y con eso el build no ve el `package.json` de la raíz:
+`@gym/shared` es un workspace local, no un paquete publicado, así que npm lo
+busca en el registry. El síntoma es `404 '@gym/shared@*' is not in this
+registry`.
 
 Railway ya está pago por otro proyecto, así que la API vive ahí. El frontend
 se queda en Cloudflare Pages, que es gratis y ya estaba andando.
 
-Mientras Atlas no esté, el frontend publicado sigue apuntando al Worker de
-Cloudflare (`tingym-api`, sobre D1), que tiene todos los datos y funciona. La
-app no se rompe en el medio: el cambio de backend es un solo deploy, al final.
+El Worker de Cloudflare queda en `worker/` como alternativa: mismo contrato de
+API y mismo esquema de auth, así que se vuelve a él cambiando `VITE_API_URL`.
 
-El Worker queda en `worker/` como alternativa: mismo contrato de API y mismo
-esquema de auth, así que se puede volver a él con un cambio de `VITE_API_URL`.
+## Lo que queda pendiente
 
-## Lo que falta (dos cosas, con login propio)
+Nada bloqueante. Sólo `ANTHROPIC_API_KEY`, si alguna vez se quiere la capa de
+IA; sin ella la app decide con la regla local y ni ofrece el botón.
 
-**1. Cluster de Atlas.** En https://cloud.mongodb.com: plan **M0**, región São
-Paulo; un usuario en *Database Access*; y `0.0.0.0/0` en *Network Access*
-(Railway no tiene IP fija). Copiar la connection string y agregarle la base:
-`...mongodb.net/gymapp?retryWrites=true&w=majority`.
+## Secretos
 
-Después, un solo comando desde la raíz del repo:
-
-```bash
-node server/scripts/finalizar-setup.js "<URI_ATLAS>"
-```
-
-Prueba la conexión, importa los datos que están en D1, guarda `MONGO_URL` en
-Railway, despliega la API, espera a que responda y republica el frontend
-apuntado a ella. Si algo falla, corta ahí y dice qué pasó.
-
-**2. Autodeploys.** En el dashboard de Railway, servicio `api` → *Settings* →
-*Connect Repo* → `IsTincho/tingym`. Requiere autorizar la GitHub App de
-Railway, que es un login y por eso no se puede hacer desde acá. Con eso, cada
-push a `main` despliega solo. `railway.json` ya trae `watchPatterns`, así que
-un cambio que toque únicamente `client/` no dispara deploy de la API.
+`atlas-credentials.env` está en `.gitignore` y no se sube: tiene la contraseña
+de la base. Lo mismo con cualquier volcado de datos. Los valores en uso viven
+en las variables del servicio de Railway, que es donde tienen que estar.
 
 ## Estructura
 
