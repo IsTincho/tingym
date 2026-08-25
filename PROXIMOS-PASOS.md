@@ -384,9 +384,31 @@ Eso descarta Gemini, y no por calidad. El default vuelve a **Groq**, que da
 1.000 por día: cincuenta veces más. La cuota de Gemini es por modelo, así que
 se podría estirar rotando modelos, pero es frágil y no vale la pena.
 
-**Queda sin verificar la calidad de Groq**, por la misma razón que antes: no
-hay key. Lo que sí está medido es que la de Gemini alcanzaba, así que si Groq
-se queda corto en español rioplatense, el problema es real y hay que mirarlo.
+### Groq, medido — 25/8/2026
+
+Con la key cargada se midió también. Dos sorpresas.
+
+**`llama-3.3-70b-versatile` ya no existe en Groq.** El catálogo cambió y no hay
+más modelos Llama de chat. El mensaje de 404 que nombra la variable volvió a
+ser lo que lo destapó, por segunda vez en el día.
+
+**`qwen/qwen3.6-27b` es inutilizable acá:** filtra bloques `<think>` dentro del
+`content` y el JSON no parsea nunca. 0 de 10. Es exactamente el riesgo que
+estaba anotado como "los modelos abiertos obedecen menos el sólo-JSON", sólo
+que peor de lo esperado: no es que envuelva en backticks, es que escribe el
+razonamiento adentro de la respuesta.
+
+Quedó `openai/gpt-oss-120b`. Seis de seis válidas, **~700 ms** contra los 20
+segundos de mediana de Gemini.
+
+Calidad: clava los platos simples (200 g de pollo con arroz → 530 kcal / 66 g,
+contra ~530/65 de tabla; alfajor → 220/3) y **subestima los compuestos** entre
+20 % y 30 % — milanesa con puré da 450-550 donde deberían ser ~700, tres
+empanadas 600 donde son ~750.
+
+**Pendiente:** calibrar el prompt con porciones de referencia para los platos
+argentinos más comunes. No se hizo porque son seis muestras y no alcanzan. Es
+el próximo paso natural de esta feature, y ahora se puede medir de verdad.
 
 ---
 

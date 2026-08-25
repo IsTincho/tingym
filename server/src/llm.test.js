@@ -83,7 +83,7 @@ describe('llmConfig', () => {
     const c = llmConfig();
     expect(c.nombre).toBe('groq');
     expect(c.url).toContain('api.groq.com');
-    expect(c.modelo).toBe('llama-3.3-70b-versatile');
+    expect(c.modelo).toBe('openai/gpt-oss-120b');
   });
 
   // El punto de toda esta capa: cambiar de proveedor es una variable, no una

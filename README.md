@@ -176,6 +176,26 @@ railway variables --service api --set "GROQ_API_KEY=gsk_..."
 La key se saca en https://console.groq.com/keys, sin tarjeta. Para probar
 Gemini: `LLM_PROVIDER=gemini` más `GEMINI_API_KEY`, sabiendo lo de las 20.
 
+### Modelos, medidos contra la API real
+
+| Modelo | Resultado |
+|--------|-----------|
+| `openai/gpt-oss-120b` **(default)** | 6/6 válidas, ~700 ms |
+| `openai/gpt-oss-20b` | 6/6 válidas, ~600 ms. Calidad equivalente |
+| `qwen/qwen3.6-27b` | **No usar.** Filtra bloques `<think>` en el content; 0/10 parsean |
+| `llama-3.3-70b-versatile` | Ya no existe en Groq. El catálogo cambió |
+
+Se eligió el grande porque el mismo modelo atiende el veredicto del coach, que
+es más difícil que estimar calorías. Los 100 ms de diferencia no se notan.
+
+Calidad observada: clava los platos simples —200 g de pollo con arroz da
+530 kcal / 66 g contra ~530/65 de tabla, un alfajor 220/3— y **subestima los
+platos compuestos**: milanesa con puré y empanadas dan entre un 20 % y un 30 %
+menos de lo razonable. Si eso molesta, el lugar para arreglarlo es el prompt de
+`server/src/routes/meals.js`, con porciones de referencia para los platos
+argentinos más comunes. No se hizo todavía: son seis muestras y no alcanza para
+calibrar.
+
 **Ojo con `max_tokens` si tocás el código.** Los modelos que razonan —toda la
 familia Gemini 3.x— gastan el presupuesto pensando y la respuesta sale de lo
 que sobra. Con 200 tokens el JSON volvía cortado al medio, con

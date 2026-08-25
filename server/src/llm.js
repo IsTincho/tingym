@@ -28,7 +28,16 @@ const PROVEEDORES = {
   groq: {
     url: 'https://api.groq.com/openai/v1/chat/completions',
     // 30 req/min y 1.000 por dia en el plan gratis, sin tarjeta.
-    modelo: 'llama-3.3-70b-versatile',
+    //
+    // gpt-oss-120b y no llama: Groq ya no sirve modelos Llama de chat, el
+    // catalogo cambio. Medido contra la API real, los dos gpt-oss dan calidad
+    // equivalente en ~700ms; se eligio el grande porque el mismo modelo
+    // atiende el veredicto del coach, que es mas dificil que estimar
+    // calorias.
+    //
+    // NO usar qwen/qwen3.6-27b: filtra bloques <think> dentro del content y
+    // el JSON no parsea nunca. Probado, 0 de 10.
+    modelo: 'openai/gpt-oss-120b',
   },
   gemini: {
     url: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',

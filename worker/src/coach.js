@@ -83,7 +83,7 @@ export function parseVerdict(text) {
 const PROVEEDORES = {
   groq: {
     url: 'https://api.groq.com/openai/v1/chat/completions',
-    modelo: 'llama-3.3-70b-versatile',
+    modelo: 'openai/gpt-oss-120b',
   },
   gemini: {
     url: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',
