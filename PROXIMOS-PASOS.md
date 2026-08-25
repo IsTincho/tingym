@@ -406,9 +406,39 @@ contra ~530/65 de tabla; alfajor → 220/3) y **subestima los compuestos** entre
 20 % y 30 % — milanesa con puré da 450-550 donde deberían ser ~700, tres
 empanadas 600 donde son ~750.
 
-**Pendiente:** calibrar el prompt con porciones de referencia para los platos
-argentinos más comunes. No se hizo porque son seis muestras y no alcanzan. Es
-el próximo paso natural de esta feature, y ahora se puede medir de verdad.
+**El presupuesto de tokens fue el 80 % del trabajo.** Tres vueltas:
+
+1. `max_tokens: 200` truncaba a Gemini. Se subió a 1.500.
+2. Con 1.500, Groq daba 429 constantes: reserva el `max_tokens` pedido contra
+   su cuota de **8.000 tokens por minuto**, así que cinco llamadas y se acabó.
+3. `gpt-oss` también razona —y engaña: los tokens de razonamiento cuentan en
+   `completion_tokens` pero **no aparecen en `content`**, así que al truncarse
+   la API devuelve 200 OK con el content vacío. Fallaban justo las comidas de
+   varios ítems.
+
+Quedó resuelto poniendo la holgura en la capa de LLM y no en quien llama:
+`maxTokens` es el tamaño de la respuesta, y `llm.js` le suma lo que ese
+proveedor necesita para pensar (600 en Groq, 1.500 en Gemini). Dos tests fijan
+las dos mitades.
+
+**Estado final, medido contra producción: 12 de 12 válidas, mediana 1,2 s.**
+
+| Comida | Estimación |
+|--------|-----------|
+| 200 g de pollo con arroz | 530 kcal · 66 g |
+| Milanesa con puré | 450 · 23 |
+| Asado: dos chorizos, morcilla y tira | 1380 · 83 |
+| Tres empanadas de carne | 600 · 27 |
+| Un alfajor | 220 · 3 |
+| Provoleta y una picada | 860 · 35 |
+| `comí bien` / `lo de siempre` | `null` · `null` |
+
+**Pendiente:** calibrar el prompt. Los platos simples salen bien (pollo con
+arroz 530/66 contra ~530/65 de tabla, alfajor 220/3) pero los compuestos
+oscilan: la milanesa con puré da 450 donde deberían ser ~700, y el asado 1380
+que parece alto. El lugar es el prompt de `server/src/routes/meals.js`, con
+porciones de referencia argentinas. Ahora se puede medir de verdad, que es lo
+que faltaba.
 
 ---
 
