@@ -5,3 +5,5 @@ dev-dist
 .env.local
 .DS_Store
 .env.production
+d1-dump.sql
+*.dump.sql

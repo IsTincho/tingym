@@ -4,6 +4,7 @@
   "workspaces": [
     "shared",
     "client",
+    "server",
     "worker"
   ],
   "scripts": {
@@ -13,7 +14,8 @@
     "test": "npm run test -w shared",
     "dev:api": "npm run dev -w worker",
     "deploy:api": "npm run deploy -w worker",
-    "deploy:web": "npm run build && wrangler pages deploy client/dist --project-name tingym --branch main"
+    "deploy:web": "npm run build && wrangler pages deploy client/dist --project-name tingym --branch main",
+    "dev:server": "npm run dev -w server"
   },
   "engines": {
     "node": ">=22"
