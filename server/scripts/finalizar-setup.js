@@ -13,24 +13,54 @@
  *   5. reconstruye el frontend apuntando a esa API y lo publica
  *
  * Uso, desde la raíz del repo:
+ *   node server/scripts/finalizar-setup.js atlas-credentials.env
  *   node server/scripts/finalizar-setup.js "<URI_ATLAS>"
+ *
+ * Con un archivo .env es preferible: la URI no queda en el historial del
+ * shell ni en la lista de procesos.
  *
  * Es seguro correrlo más de una vez: la importación escribe por _id y el
  * resto son operaciones idempotentes.
  */
 import { execFileSync } from 'node:child_process';
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { MongoClient } from 'mongodb';
+import { asegurarResolucionSrv } from './dns-srv.js';
 
-const [URI] = process.argv.slice(2);
-if (!URI) {
-  console.error('Uso: node server/scripts/finalizar-setup.js "<URI_ATLAS>"');
+const [ENTRADA] = process.argv.slice(2);
+if (!ENTRADA) {
+  console.error('Uso: node server/scripts/finalizar-setup.js <archivo.env | "URI_ATLAS">');
   process.exit(1);
 }
-if (!/^mongodb(\+srv)?:\/\//.test(URI)) {
-  console.error('Eso no parece una connection string de Mongo (tiene que empezar con mongodb+srv://)');
-  process.exit(1);
+
+/** Acepta la URI directa o un .env con MONGODB_URI / MONGO_URL. */
+function leerUri(entrada) {
+  if (/^mongodb(\+srv)?:\/\//.test(entrada)) return entrada;
+  if (!existsSync(entrada)) {
+    console.error('Eso no es una URI de Mongo ni un archivo que exista.');
+    process.exit(1);
+  }
+  const texto = readFileSync(entrada, 'utf8');
+  const m = texto.match(/^\s*(?:MONGODB_URI|MONGO_URL|MONGO_URI)\s*=\s*["']?([^"'\r\n]+)/m);
+  if (!m) {
+    console.error(`${entrada} no tiene MONGODB_URI ni MONGO_URL.`);
+    process.exit(1);
+  }
+  return m[1].trim();
 }
+
+const base = process.env.MONGO_DB || 'gymapp';
+let URI = leerUri(ENTRADA);
+
+// La URI que da Atlas viene sin base. Sin eso, el driver escribe en 'test'.
+if (!new URL(URI.replace('mongodb+srv://', 'https://')).pathname.replace(/^\//, '')) {
+  const [host, query] = URI.split('?');
+  URI = `${host.replace(/\/$/, '')}/${base}${query ? `?${query}` : '?retryWrites=true&w=majority'}`;
+  console.log(`Se le agregó la base a la URI: .../${base}`);
+}
+
+// Nada de esto se imprime nunca en claro.
+const oculta = (t) => String(t).replace(/(mongodb\+srv:\/\/[^:]+:)[^@]+@/g, '$1***@');
 
 const CUENTA_CLOUDFLARE = 'f1f96e941312e5e727168d7d498e03fa';
 const DUMP = 'd1-dump.sql';
@@ -42,6 +72,10 @@ const correr = (cmd, args, opts = {}) =>
 // 1 --------------------------------------------------------------------
 paso(1, 'Probando la conexión al cluster');
 {
+  const dnsEstado = await asegurarResolucionSrv(URI);
+  if (dnsEstado === 'fallback') {
+    console.log('    el resolver del sistema no contesta consultas SRV; se usa DNS público');
+  }
   const client = new MongoClient(URI, { serverSelectionTimeoutMS: 15_000 });
   try {
     await client.connect();
@@ -59,14 +93,27 @@ paso(1, 'Probando la conexión al cluster');
 // 2 --------------------------------------------------------------------
 paso(2, 'Importando los datos que quedaron en D1');
 if (existsSync(DUMP)) {
-  correr('node', ['server/scripts/migrar-d1-a-mongo.js', DUMP, `"${URI}"`]);
+  // La URI viaja por env y no por argumento: los argumentos son visibles en
+  // la lista de procesos del sistema.
+  correr('node', ['server/scripts/migrar-d1-a-mongo.js', DUMP, '--desde-env'], {
+    env: { ...process.env, MONGO_URL: URI },
+  });
 } else {
   console.log(`    no hay ${DUMP}, se saltea (generalo con: cd worker && npx wrangler d1 export tingym-db --remote --output ../${DUMP})`);
 }
 
 // 3 --------------------------------------------------------------------
 paso(3, 'Guardando MONGO_URL en Railway');
-correr('railway', ['variables', '--service', 'api', '--set', `"MONGO_URL=${URI}"`, '--skip-deploys']);
+{
+  // stdio en pipe a propósito: el CLI de Railway repite el valor que recibe,
+  // y ese valor tiene la contraseña de la base adentro.
+  const salida = execFileSync(
+    'railway',
+    ['variables', '--service', 'api', '--set', `"MONGO_URL=${URI}"`, '--skip-deploys'],
+    { encoding: 'utf8', shell: true },
+  );
+  console.log(`    ${oculta(salida).trim().split('\n').pop()}`);
+}
 
 // 4 --------------------------------------------------------------------
 paso(4, 'Desplegando la API');

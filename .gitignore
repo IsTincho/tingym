@@ -7,3 +7,5 @@ dev-dist
 .env.production
 d1-dump.sql
 *.dump.sql
+atlas-credentials.env
+*credentials.env

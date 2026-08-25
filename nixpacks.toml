@@ -1,0 +1,17 @@
+# El repo es un monorepo con workspaces de npm: el backend importa @gym/shared,
+# que no existe en el registry y se resuelve por el package.json de la raiz.
+#
+# Por eso el build TIENE que correr desde la raiz. Si el servicio de Railway
+# tiene un Root Directory apuntando a server/, este archivo ni se lee y el
+# install falla con "404 @gym/shared no esta en el registry".
+#
+# npm ci y no npm i: el lock manda, y ademas es la unica forma de detectar que
+# el lock quedo desincronizado en vez de resolverlo silenciosamente.
+[phases.install]
+cmds = ["npm ci"]
+
+[phases.build]
+cmds = ["echo 'sin build: el server corre directo desde src/'"]
+
+[start]
+cmd = "npm start -w server"

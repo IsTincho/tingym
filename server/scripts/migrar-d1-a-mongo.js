@@ -19,10 +19,15 @@
  */
 import { readFileSync } from 'node:fs';
 import { MongoClient } from 'mongodb';
+import { asegurarResolucionSrv } from './dns-srv.js';
 
-const [DUMP, URI] = process.argv.slice(2);
+const [DUMP, ARG] = process.argv.slice(2);
+// La URI puede venir por env para no dejarla en la lista de procesos.
+const URI = ARG === '--desde-env' ? process.env.MONGO_URL : ARG;
 if (!DUMP || !URI) {
-  console.error('Uso: node server/scripts/migrar-d1-a-mongo.js <d1-dump.sql> "<URI_MONGO>"');
+  console.error(
+    'Uso: node server/scripts/migrar-d1-a-mongo.js <d1-dump.sql> ["<URI_MONGO>" | --desde-env]',
+  );
   process.exit(1);
 }
 
@@ -80,6 +85,8 @@ for (const linea of sql) {
   if (!porTabla.has(tabla)) porTabla.set(tabla, []);
   porTabla.get(tabla).push(valores);
 }
+
+await asegurarResolucionSrv(URI);
 
 const client = new MongoClient(URI);
 
