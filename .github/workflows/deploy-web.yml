@@ -1,0 +1,56 @@
+# Deploy del frontend a Cloudflare Pages en cada push a main.
+#
+# Antes del primer uso hay que cargar dos secrets en el repo
+# (Settings → Secrets and variables → Actions):
+#
+#   CLOUDFLARE_API_TOKEN    token con permiso "Cloudflare Pages: Edit"
+#                           https://dash.cloudflare.com/profile/api-tokens
+#   CLOUDFLARE_ACCOUNT_ID   el id de cuenta, está en la URL del dashboard
+#
+# Sin esos secrets el workflow falla en el último paso y no rompe nada más.
+#
+# La API no se toca acá: la despliega Railway sola, y sus watchPatterns ya
+# filtran los cambios que sólo tocan client/.
+
+name: Deploy web
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'client/**'
+      - 'shared/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/deploy-web.yml'
+  # Para poder disparar un deploy a mano sin tener que pushear algo.
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      # El install va desde la raíz, no desde client/: @gym/shared es un
+      # workspace local y no está publicado. Instalarlo desde client/ hace que
+      # npm lo busque en el registry y falle con un 404.
+      - run: npm ci
+
+      # Los tests del motor de progresión son rápidos y son la red de
+      # seguridad: si se rompen, no tiene sentido publicar.
+      - run: npm test
+
+      - run: npm run build
+
+      - name: Publicar en Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy client/dist --project-name tingym --branch main

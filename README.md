@@ -70,8 +70,22 @@ npm test            # motor de progresión e insights
 
 ## Deploy
 
+El frontend lo despliega GitHub Actions en cada push a `main`
+(`.github/workflows/deploy-web.yml`). Necesita dos secrets cargados en
+Settings → Secrets and variables → Actions:
+
+| Secret | De dónde sale |
+|--------|---------------|
+| `CLOUDFLARE_API_TOKEN` | https://dash.cloudflare.com/profile/api-tokens, con permiso **Cloudflare Pages: Edit** |
+| `CLOUDFLARE_ACCOUNT_ID` | está en la URL del dashboard de Cloudflare |
+
+Sin esos secrets el workflow falla en el último paso y no rompe nada más: el
+build y los tests corren igual.
+
+A mano, si hace falta:
+
 ```bash
-npm run deploy:web   # build + Cloudflare Pages
+npm run deploy:web   # build + Cloudflare Pages (requiere wrangler login)
 railway up --service api   # API (o automático, con el repo conectado)
 npm run deploy:api   # la variante Worker
 ```
