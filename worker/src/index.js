@@ -10,7 +10,7 @@ import {
   setSchema,
 } from '@gym/shared';
 import { hashAuthKey, randomSalt, requireAuth, safeEqual, signToken } from './auth.js';
-import { SYSTEM_PROMPT, parseVerdict, userPrompt } from './coach.js';
+import { SYSTEM_PROMPT, llmConfig, parseVerdict, userPrompt } from './coach.js';
 
 const json = (data, status = 200, extra = {}) =>
   new Response(JSON.stringify(data), {
@@ -281,7 +281,13 @@ async function veredicto(request, env, usuario) {
     loadType: input.loadType,
   });
 
-  if (!env.ANTHROPIC_API_KEY) {
+  // Mismo criterio que el server de Express (ver server/src/llm.js): el
+  // proveedor se elige por variable y se habla el formato de OpenAI, que es
+  // el que entienden Groq, Gemini y casi todos. Acá va duplicado y no
+  // importado porque `shared` es codigo puro sin red, a proposito, y el
+  // Worker no puede leer process.env.
+  const llm = llmConfig(env);
+  if (!llm) {
     return json({ verdict: fallback, degraded: 'sin API key configurada' });
   }
 
@@ -291,27 +297,31 @@ async function veredicto(request, env, usuario) {
   if (!limite.ok) return json({ verdict: fallback, degraded: 'límite por minuto alcanzado' });
 
   try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
+    const res = await fetch(llm.url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': env.ANTHROPIC_API_KEY,
-        'anthropic-version': '2023-06-01',
+        Authorization: `Bearer ${llm.key}`,
       },
       body: JSON.stringify({
-        model: env.ANTHROPIC_MODEL ?? 'claude-sonnet-5',
+        model: llm.modelo,
         max_tokens: 400,
-        system: SYSTEM_PROMPT,
-        messages: [{ role: 'user', content: userPrompt(input) }],
+        // Baja a proposito: se piden datos, no prosa.
+        temperature: 0.3,
+        messages: [
+          { role: 'system', content: SYSTEM_PROMPT },
+          { role: 'user', content: userPrompt(input) },
+        ],
       }),
     });
-    if (!res.ok) return json({ verdict: fallback, degraded: `API ${res.status}` });
+    if (!res.ok) {
+      const motivo =
+        res.status === 429 ? 'límite de la API alcanzado' : `API ${res.status}`;
+      return json({ verdict: fallback, degraded: motivo });
+    }
 
     const data = await res.json();
-    const texto = (data.content ?? [])
-      .filter((b) => b.type === 'text')
-      .map((b) => b.text)
-      .join('');
+    const texto = data?.choices?.[0]?.message?.content ?? '';
     const crudo = parseVerdict(texto);
     if (!crudo) return json({ verdict: fallback, degraded: 'respuesta no parseable' });
 
@@ -359,7 +369,7 @@ export default {
     if (ruta === '/api/health') {
       // `coach` le dice al cliente si la capa de IA está configurada. Sin
       // esto la app ofrecería un botón de análisis que siempre falla.
-      return json({ ok: true, coach: Boolean(env.ANTHROPIC_API_KEY) });
+      return json({ ok: true, coach: llmConfig(env) !== null });
     }
 
     try {

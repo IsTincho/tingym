@@ -11,7 +11,7 @@
     "dev": "npm run dev -w client",
     "build": "npm run build -w client",
     "preview": "npm run preview -w client",
-    "test": "npm run test -w shared",
+    "test": "npm run test -w shared && npm run test -w server",
     "dev:api": "npm run dev -w worker",
     "deploy:api": "npm run deploy -w worker",
     "deploy:web": "npm run build && wrangler pages deploy client/dist --project-name tingym --branch main",

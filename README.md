@@ -132,11 +132,40 @@ En el Worker: `wrangler secret put NOMBRE` desde `worker/`.
 | `MONGO_DB` | `gymapp` |
 | `JWT_SECRET` | Firma de los tokens. Ya configurada. |
 | `CORS_ORIGIN` | Orígenes permitidos, separados por coma |
-| `ANTHROPIC_API_KEY` | **Sin configurar.** Enciende las dos features de IA a la vez, porque es una sola key: `/api/coach/verdict` (sin ella, fallback determinista) y `/api/meals/parse` (sin ella, escribís kcal y proteína a mano). En los dos casos la app ni ofrece el botón — `/api/health` informa `coach: false`. |
-| `ANTHROPIC_MODEL` | Opcional, por defecto `claude-sonnet-5` |
+| `LLM_API_KEY` | **Sin configurar.** Enciende las dos features de IA a la vez, porque es una sola key: `/api/coach/verdict` (sin ella, fallback determinista) y `/api/meals/parse` (sin ella, escribís kcal y proteína a mano). En los dos casos la app ni ofrece el botón — `/api/health` informa `coach: false`. Se aceptan también `GROQ_API_KEY`, `GEMINI_API_KEY` y `OPENAI_API_KEY`, que es el nombre que usa la doc de cada uno. |
+| `LLM_PROVIDER` | `groq` (por defecto), `gemini`, `openai` o `custom` |
+| `LLM_MODEL` | Opcional. Pisa el modelo del preset sin tocar la URL |
+| `LLM_URL` | Sólo para `custom`: cualquier endpoint compatible con OpenAI |
 
-La key de Anthropic nunca toca el cliente: es la razón por la que existe el
-backend.
+La key nunca toca el cliente: es la razón por la que existe el backend.
+
+### El proveedor de IA
+
+Todo pasa por `server/src/llm.js`, que habla el formato `/chat/completions` de
+OpenAI con un `fetch` pelado y sin SDK de nadie. Groq, Gemini, OpenRouter,
+Together y un Ollama local hablan todos ese formato, así que **cambiar de
+proveedor es una variable de entorno**, no una reescritura. Este proyecto ya
+cambió una vez; la segunda no tiene que doler.
+
+| Proveedor | Gratis | Límites | ¿Entrena con tus prompts? |
+|-----------|--------|---------|---------------------------|
+| **Groq** (default) | Sí, sin tarjeta | 30 req/min, 1.000/día | **No**, tampoco en el plan gratis |
+| Gemini | Sí, sin tarjeta | 15 req/min, 1.500/día | **Sí**, los términos del free tier lo permiten |
+
+Groq es el default por la última columna. Por acá viaja lo que una persona come
+y entrena: gratis son los dos, pero uno se lo queda. Los límites de Groq sobran
+por dos órdenes de magnitud para un usuario que anota diez series y tres
+comidas por día.
+
+```bash
+railway variables --service api --set "GROQ_API_KEY=gsk_..."
+```
+
+La key se saca en https://console.groq.com/keys, sin tarjeta. Para cambiar a
+Gemini alcanza con `LLM_PROVIDER=gemini` y su key.
+
+`/api/health` devuelve qué proveedor y modelo quedaron activos —nunca la key—,
+así que después de tocar variables en Railway se confirma de un vistazo.
 
 ## Autenticación
 

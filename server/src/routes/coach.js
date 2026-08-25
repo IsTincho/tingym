@@ -1,12 +1,10 @@
 import { Router } from 'express';
-import Anthropic from '@anthropic-ai/sdk';
 import { z } from 'zod';
 import { aiVerdictSchema, deterministicVerdict, setSchema } from '@gym/shared';
 import { requireAuth, rateLimit } from '../auth.js';
+import { llmJson } from '../llm.js';
 
 const router = Router();
-
-const MODEL = process.env.ANTHROPIC_MODEL ?? 'claude-sonnet-5';
 
 const body = z.object({
   exerciseName: z.string().max(120).default('el ejercicio'),
@@ -87,26 +85,6 @@ Contexto: ${input.context.exerciseNumber ? `ejercicio número ${input.context.ex
   }${input.context.userNote ? `\nEl atleta anotó: "${input.context.userNote}"` : ''}`;
 }
 
-/**
- * Extrae el JSON aunque el modelo haya agregado algo alrededor. El prompt pide
- * JSON pelado, pero el parseo no puede depender de que siempre obedezca.
- */
-function parseVerdict(text) {
-  const limpio = text.trim().replace(/^```(?:json)?/i, '').replace(/```$/, '').trim();
-  try {
-    return JSON.parse(limpio);
-  } catch {
-    const desde = limpio.indexOf('{');
-    const hasta = limpio.lastIndexOf('}');
-    if (desde === -1 || hasta <= desde) return null;
-    try {
-      return JSON.parse(limpio.slice(desde, hasta + 1));
-    } catch {
-      return null;
-    }
-  }
-}
-
 router.post('/verdict', requireAuth, rateLimit({ windowMs: 60_000, max: 20 }), async (req, res) => {
   const parsed = body.safeParse(req.body);
   if (!parsed.success) {
@@ -122,41 +100,23 @@ router.post('/verdict', requireAuth, rateLimit({ windowMs: 60_000, max: 20 }), a
     loadType: input.loadType,
   });
 
-  if (!process.env.ANTHROPIC_API_KEY) {
-    return res.json({ verdict: fallback, degraded: 'sin API key configurada' });
+  const { ok, data, motivo } = await llmJson({
+    system: SYSTEM,
+    user: userPrompt(input),
+    maxTokens: 400,
+  });
+  if (!ok) return res.json({ verdict: fallback, degraded: motivo });
+
+  const veredicto = aiVerdictSchema.safeParse({
+    ...data,
+    suggestedWeightKg: data.suggestedWeightKg ?? null,
+    source: 'ai',
+    generatedAt: new Date().toISOString(),
+  });
+  if (!veredicto.success) {
+    return res.json({ verdict: fallback, degraded: 'respuesta fuera de esquema' });
   }
-
-  try {
-    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-    const respuesta = await client.messages.create({
-      model: MODEL,
-      max_tokens: 400,
-      system: SYSTEM,
-      messages: [{ role: 'user', content: userPrompt(input) }],
-    });
-
-    const texto = respuesta.content
-      .filter((b) => b.type === 'text')
-      .map((b) => b.text)
-      .join('');
-
-    const crudo = parseVerdict(texto);
-    if (!crudo) return res.json({ verdict: fallback, degraded: 'respuesta no parseable' });
-
-    const veredicto = aiVerdictSchema.safeParse({
-      ...crudo,
-      suggestedWeightKg: crudo.suggestedWeightKg ?? null,
-      source: 'ai',
-      generatedAt: new Date().toISOString(),
-    });
-
-    if (!veredicto.success) {
-      return res.json({ verdict: fallback, degraded: 'respuesta fuera de esquema' });
-    }
-    return res.json({ verdict: veredicto.data });
-  } catch (err) {
-    return res.json({ verdict: fallback, degraded: err?.message ?? 'error de la API' });
-  }
+  return res.json({ verdict: veredicto.data });
 });
 
 export default router;

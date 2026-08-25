@@ -5,6 +5,7 @@ import authRoutes from './routes/auth.js';
 import syncRoutes from './routes/sync.js';
 import coachRoutes from './routes/coach.js';
 import mealRoutes from './routes/meals.js';
+import { llmConfig, llmConfigurado } from './llm.js';
 
 const app = express();
 
@@ -16,9 +17,21 @@ app.use(express.json({ limit: '5mb' })); // una sync grande son varias sesiones
 
 // `coach` le dice al cliente si la capa de IA esta configurada. Sin esto la
 // app tendria que ofrecer un boton de analisis que siempre falla.
-app.get('/api/health', (_req, res) =>
-  res.json({ ok: true, coach: Boolean(process.env.ANTHROPIC_API_KEY) }),
-);
+//
+// El nombre del campo quedo de cuando la unica feature de IA era el coach.
+// Hoy cubre tambien la estimacion de comidas, porque es una sola key: si hay
+// proveedor, estan las dos. No se renombra para no romper clientes viejos que
+// ya estan instalados como PWA y leen `coach`.
+app.get('/api/health', (_req, res) => {
+  const cfg = llmConfig();
+  res.json({
+    ok: true,
+    coach: llmConfigurado(),
+    // Util para confirmar de un vistazo cual quedo activo despues de tocar
+    // variables en Railway. Nunca la key, obviamente: solo el nombre.
+    llm: cfg ? { proveedor: cfg.nombre, modelo: cfg.modelo } : null,
+  });
+});
 
 app.use('/api/auth', authRoutes);
 app.use('/api/sync', syncRoutes);

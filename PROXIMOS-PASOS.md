@@ -89,8 +89,8 @@ con CORS abierto.
 
 ### Propuesta
 
-**Un endpoint `/api/meal/parse` que use la key de Anthropic que ya está
-prevista.** Le pasa el texto, devuelve kcal y proteína estimadas.
+**Un endpoint `/api/meal/parse` que use la capa de IA que ya está prevista.**
+Le pasa el texto, devuelve kcal y proteína estimadas.
 
 Por qué esto y no una base de datos:
 
@@ -138,17 +138,19 @@ Decisiones que aparecieron al escribirlo:
   calcular calorías con una regla local. O estima la IA o escribís a mano, que
   es exactamente lo que la app hace hoy.
 
-**Falta para que se encienda:** cargar `ANTHROPIC_API_KEY` en Railway. Hoy
-`/api/health` responde `coach: false` y el botón ni aparece.
+**Falta para que se encienda:** cargar la key en Railway. Hoy `/api/health`
+responde `coach: false` y el botón ni aparece.
 
 ```bash
-railway variables --service api --set "ANTHROPIC_API_KEY=..."
+railway variables --service api --set "GROQ_API_KEY=gsk_..."
 ```
 
 **Sin verificar contra la API real:** la calidad de las estimaciones. El
-cableado está probado punta a punta contra un stub, y el esquema tiene tests,
-pero nadie le preguntó todavía a Anthropic cuántas calorías tiene una
-milanesa. Cuando cargues la key, la primera prueba es esa.
+cableado está probado punta a punta y el esquema tiene tests, pero nadie le
+preguntó todavía a un modelo de verdad cuántas calorías tiene una milanesa.
+Cuando cargues la key, la primera prueba es esa —y es la que más importa,
+porque `llama-3.3-70b` no es Claude y el español rioplatense con nombres de
+comida local es justo donde un modelo abierto puede flaquear.
 
 Open Food Facts para código de barras sigue pendiente, sin empezar.
 
@@ -295,10 +297,56 @@ no necesita cambios: un entrenador es un usuario más. Lo que hace falta:
 
 ---
 
+## 6. Cambio de proveedor de IA — 25/8/2026
+
+Anthropic quedaba pago y la decisión fue no sumar gasto. En vez de cambiar un
+SDK clavado por otro SDK clavado, la llamada se metió detrás de
+`server/src/llm.js`: `fetch` pelado contra el formato `/chat/completions` de
+OpenAI, que es el que hablan Groq, Gemini, OpenRouter, Together y un Ollama
+local. **Cambiar de proveedor ahora es una variable de entorno.** El proyecto
+ya cambió una vez; la segunda no tiene que doler.
+
+Se fue la dependencia `@anthropic-ai/sdk`. El server ya no tiene ningún SDK de
+IA.
+
+### Por qué Groq y no Gemini
+
+| | Groq | Gemini free |
+|---|---|---|
+| Gratis sin tarjeta | Sí | Sí |
+| Límites | 30/min, 1.000/día | 15/min, 1.500/día |
+| **Entrena con tus prompts** | **No**, tampoco en el free | **Sí**, los términos lo permiten |
+
+Decide la última fila. Por acá viaja lo que una persona come y entrena: gratis
+son los dos, pero uno se lo queda. Los límites de Groq sobran por dos órdenes
+de magnitud para un usuario solo.
+
+Gemini queda soportado con `LLM_PROVIDER=gemini`, por si alguna vez la calidad
+en español lo justifica.
+
+### Lo que hay que mirar cuando esté andando
+
+`llama-3.3-70b` no es Claude. Dos cosas a vigilar:
+
+- **Obediencia al "solo JSON".** Los modelos abiertos envuelven en backticks o
+  agregan prosa más seguido. El parseo tolerante ya estaba y ahora tiene tests
+  que cubren backticks y texto alrededor, pero si falla mucho, el paso
+  siguiente es `response_format: json_object`, que Groq soporta.
+- **Español rioplatense con comida local.** Milanesa, facturas, provoleta.
+  Es el punto más probable de flaqueza y no está verificado contra el modelo
+  real.
+
+El worker de Cloudflare también se portó, aunque hoy no esté en uso: dejar dos
+backends en proveedores distintos es una trampa para el que vuelva en tres
+meses. Su `llmConfig` está duplicado a propósito —`shared` es código puro sin
+red y el Worker no tiene `process.env`.
+
+---
+
 ## 5. Para decidir mañana
 
 - [x] ~~¿El parseo de comida va por Anthropic o se mete FatSecret?~~
-      Anthropic, implementado. Ver sección 2.
+      Ni uno ni otro: va por Groq, gratis. Ver sección 2 y la 6.
 - [x] ~~¿Las imágenes de ejercicios se sirven propias o desde el raw de GitHub?~~
       Propias. Ver sección 3.
 - [ ] ¿Se arranca por entrenador/alumno o por las dos features chicas primero?

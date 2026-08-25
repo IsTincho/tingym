@@ -70,3 +70,42 @@ export function parseVerdict(text) {
     }
   }
 }
+
+// Resuelve el proveedor de LLM desde el `env` del Worker.
+//
+// Es el gemelo de server/src/llm.js y esta duplicado a proposito: `shared` es
+// codigo puro sin red —eso lo dice el README y es lo que lo hace testeable—, y
+// el Worker no tiene process.env, asi que no puede importar el del server.
+// Duplicar treinta lineas es mas barato que ensuciar shared con la capa de red.
+//
+// Groq por defecto: gratis sin tarjeta y no entrena con lo que le mandas, ni
+// en el plan gratis.
+const PROVEEDORES = {
+  groq: {
+    url: 'https://api.groq.com/openai/v1/chat/completions',
+    modelo: 'llama-3.3-70b-versatile',
+  },
+  gemini: {
+    url: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',
+    modelo: 'gemini-2.5-flash',
+  },
+  openai: {
+    url: 'https://api.openai.com/v1/chat/completions',
+    modelo: 'gpt-4o-mini',
+  },
+  custom: { url: null, modelo: null },
+};
+
+export function llmConfig(env) {
+  const preset = PROVEEDORES[env.LLM_PROVIDER ?? 'groq'];
+  if (!preset) return null;
+
+  const key = env.LLM_API_KEY || env.GROQ_API_KEY || env.GEMINI_API_KEY || env.OPENAI_API_KEY || '';
+  if (!key) return null;
+
+  const url = env.LLM_URL || preset.url;
+  const modelo = env.LLM_MODEL || preset.modelo;
+  if (!url || !modelo) return null;
+
+  return { url, modelo, key };
+}
