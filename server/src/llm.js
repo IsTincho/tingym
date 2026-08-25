@@ -7,23 +7,37 @@
 // alcanza y no hay una dependencia mas que actualizar. Cambiar de proveedor es
 // cambiar una URL y un nombre de modelo.
 //
-// Por que Groq por defecto: es gratis sin tarjeta y —lo que decide— NO entrena
-// con lo que le mandas, ni en el plan gratis. El free tier de Gemini si lo
-// permite en sus terminos. Por acá viaja lo que come y entrena una persona;
-// gratis son los dos, pero uno se lo queda.
+// Por que Gemini por defecto: los dos son gratis sin tarjeta, pero
+// gemini-3.7-flash es bastante mejor que llama-3.3-70b en las dos cosas que
+// esta app necesita —espanol rioplatense con nombres de comida local, y
+// obedecer un "devolve solo JSON".
+//
+// La contra de Gemini es que los terminos del plan gratis permiten que Google
+// entrene con los prompts. Se evaluo y se acepto: lo que viaja es "Press banca
+// (barbell), 4 series de 8 con 60 kg" y "milanesa con pure". Sin email, sin
+// nombre, sin id de usuario. Son strings anonimos sobre series y comida.
+//
+// Si eso igual molesta —por ejemplo si algun dia se manda texto libre mas
+// personal en las notas del atleta—, Groq no entrena con nada ni en el plan
+// gratis, y cambiar es LLM_PROVIDER=groq. Esa es toda la migracion.
 
 const PROVEEDORES = {
-  groq: {
-    url: 'https://api.groq.com/openai/v1/chat/completions',
-    // 30 req/min y 1.000 por dia en el plan gratis. Para un usuario que anota
-    // unas diez series y tres comidas por dia, sobra por dos ordenes.
-    modelo: 'llama-3.3-70b-versatile',
-  },
   gemini: {
     url: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',
-    // 15 req/min y 1.500 por dia. Ojo: los terminos del plan gratis permiten
-    // que Google entrene con los prompts.
-    modelo: 'gemini-2.5-flash',
+    // 15 req/min y 1.500 por dia en el plan gratis. Para un usuario que anota
+    // unas diez series y tres comidas por dia, sobra por dos ordenes.
+    //
+    // Pinneado y no `gemini-flash-latest` porque un alias puede cambiarte el
+    // comportamiento abajo de los pies sin avisar. La contra es que envejece:
+    // Google ya apago gemini-2.0-flash. Cuando pase, la API tira 404 y el
+    // mensaje de abajo dice exactamente que variable tocar.
+    modelo: 'gemini-3.7-flash',
+  },
+  groq: {
+    url: 'https://api.groq.com/openai/v1/chat/completions',
+    // 30 req/min y 1.000 por dia. No entrena con los prompts, ni en el plan
+    // gratis: es la alternativa si eso llega a importar.
+    modelo: 'llama-3.3-70b-versatile',
   },
   openai: {
     url: 'https://api.openai.com/v1/chat/completions',
@@ -39,7 +53,7 @@ const PROVEEDORES = {
  * el modo degradado: la app funciona igual, sin la capa de IA.
  */
 export function llmConfig() {
-  const nombre = process.env.LLM_PROVIDER ?? 'groq';
+  const nombre = process.env.LLM_PROVIDER ?? 'gemini';
   const preset = PROVEEDORES[nombre];
   if (!preset) return null;
 
@@ -133,12 +147,18 @@ export async function llmJson({ system, user, maxTokens = 400, timeoutMs = 20_00
 
     if (!res.ok) {
       const detalle = await res.text().catch(() => '');
-      // El 429 se distingue porque es el unico que se arregla esperando, y el
-      // que va a aparecer si algun dia esto crece mas alla de un usuario.
+      // Los dos codigos que tienen una causa concreta se nombran, porque
+      // "la API respondio 404" no le dice a nadie que hacer:
+      //   429 = es el unico que se arregla esperando, y con un plan gratis es
+      //         el que va a aparecer.
+      //   404 = casi siempre el modelo se retiro. Pasa: Google ya apago
+      //         gemini-2.0-flash. Se arregla con LLM_MODEL, sin tocar codigo.
       const motivo =
         res.status === 429
-          ? 'limite de la API alcanzado, probá en un minuto'
-          : `la API respondió ${res.status}`;
+          ? 'límite de la API alcanzado, probá en un minuto'
+          : res.status === 404
+            ? `el modelo "${cfg.modelo}" no existe o se retiró — cambiá LLM_MODEL`
+            : `la API respondió ${res.status}`;
       return { ok: false, motivo, detalle: detalle.slice(0, 200) };
     }
 

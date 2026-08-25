@@ -133,7 +133,7 @@ En el Worker: `wrangler secret put NOMBRE` desde `worker/`.
 | `JWT_SECRET` | Firma de los tokens. Ya configurada. |
 | `CORS_ORIGIN` | Orígenes permitidos, separados por coma |
 | `LLM_API_KEY` | **Sin configurar.** Enciende las dos features de IA a la vez, porque es una sola key: `/api/coach/verdict` (sin ella, fallback determinista) y `/api/meals/parse` (sin ella, escribís kcal y proteína a mano). En los dos casos la app ni ofrece el botón — `/api/health` informa `coach: false`. Se aceptan también `GROQ_API_KEY`, `GEMINI_API_KEY` y `OPENAI_API_KEY`, que es el nombre que usa la doc de cada uno. |
-| `LLM_PROVIDER` | `groq` (por defecto), `gemini`, `openai` o `custom` |
+| `LLM_PROVIDER` | `gemini` (por defecto), `groq`, `openai` o `custom` |
 | `LLM_MODEL` | Opcional. Pisa el modelo del preset sin tocar la URL |
 | `LLM_URL` | Sólo para `custom`: cualquier endpoint compatible con OpenAI |
 
@@ -149,20 +149,36 @@ cambió una vez; la segunda no tiene que doler.
 
 | Proveedor | Gratis | Límites | ¿Entrena con tus prompts? |
 |-----------|--------|---------|---------------------------|
-| **Groq** (default) | Sí, sin tarjeta | 30 req/min, 1.000/día | **No**, tampoco en el plan gratis |
-| Gemini | Sí, sin tarjeta | 15 req/min, 1.500/día | **Sí**, los términos del free tier lo permiten |
+| **Gemini** (default) | Sí, sin tarjeta | 15 req/min, 1.500/día | **Sí**, los términos del free tier lo permiten |
+| Groq | Sí, sin tarjeta | 30 req/min, 1.000/día | **No**, tampoco en el plan gratis |
 
-Groq es el default por la última columna. Por acá viaja lo que una persona come
-y entrena: gratis son los dos, pero uno se lo queda. Los límites de Groq sobran
-por dos órdenes de magnitud para un usuario que anota diez series y tres
-comidas por día.
+Gemini es el default porque `gemini-3.7-flash` es bastante mejor que
+`llama-3.3-70b` en las dos cosas que esta app necesita: **español rioplatense
+con nombres de comida local** —milanesa, facturas, provoleta— y **obedecer un
+"devolvé sólo JSON"**. Los dos son los riesgos abiertos de esta feature, así
+que se eligió el modelo que los baja.
+
+La contra es la última columna, y se aceptó a conciencia. Lo que viaja es
+`Press banca (barbell), 4 series de 8 con 60 kg` y `milanesa con puré`: sin
+email, sin nombre, sin id de usuario. Son strings anónimos sobre series y
+comida. Si algún día las notas del atleta llevan texto más personal, esa
+decisión hay que revisarla — y ahí Groq no entrena con nada.
+
+Los límites de cualquiera de los dos sobran por dos órdenes de magnitud para un
+usuario que anota diez series y tres comidas por día.
 
 ```bash
-railway variables --service api --set "GROQ_API_KEY=gsk_..."
+railway variables --service api --set "GEMINI_API_KEY=..."
 ```
 
-La key se saca en https://console.groq.com/keys, sin tarjeta. Para cambiar a
-Gemini alcanza con `LLM_PROVIDER=gemini` y su key.
+La key se saca en https://aistudio.google.com/apikey, sin tarjeta. Para pasarse
+a Groq alcanza con `LLM_PROVIDER=groq` y una key de
+https://console.groq.com/keys.
+
+El modelo va pinneado y no en un alias tipo `gemini-flash-latest`, porque un
+alias puede cambiar el comportamiento sin aviso. La contra es que envejece:
+Google ya apagó `gemini-2.0-flash`. Cuando pase, la API responde 404 y el
+mensaje de error nombra el modelo y te dice que toques `LLM_MODEL`.
 
 `/api/health` devuelve qué proveedor y modelo quedaron activos —nunca la key—,
 así que después de tocar variables en Railway se confirma de un vistazo.

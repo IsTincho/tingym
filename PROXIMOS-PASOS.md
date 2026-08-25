@@ -142,15 +142,17 @@ Decisiones que aparecieron al escribirlo:
 responde `coach: false` y el botón ni aparece.
 
 ```bash
-railway variables --service api --set "GROQ_API_KEY=gsk_..."
+railway variables --service api --set "GEMINI_API_KEY=..."
 ```
+
+La key sale de https://aistudio.google.com/apikey, sin tarjeta.
 
 **Sin verificar contra la API real:** la calidad de las estimaciones. El
 cableado está probado punta a punta y el esquema tiene tests, pero nadie le
 preguntó todavía a un modelo de verdad cuántas calorías tiene una milanesa.
 Cuando cargues la key, la primera prueba es esa —y es la que más importa,
-porque `llama-3.3-70b` no es Claude y el español rioplatense con nombres de
-comida local es justo donde un modelo abierto puede flaquear.
+porque el modelo ya no es Claude y el español rioplatense con nombres de
+comida local es justo donde puede flaquear. Ver sección 6.
 
 Open Food Facts para código de barras sigue pendiente, sin empezar.
 
@@ -309,32 +311,42 @@ ya cambió una vez; la segunda no tiene que doler.
 Se fue la dependencia `@anthropic-ai/sdk`. El server ya no tiene ningún SDK de
 IA.
 
-### Por qué Groq y no Gemini
+### Por qué Gemini y no Groq
 
-| | Groq | Gemini free |
+La primera versión de esta sección decía Groq, por la fila de privacidad. Se
+revisó y se dio vuelta.
+
+| | Gemini free | Groq |
 |---|---|---|
 | Gratis sin tarjeta | Sí | Sí |
-| Límites | 30/min, 1.000/día | 15/min, 1.500/día |
-| **Entrena con tus prompts** | **No**, tampoco en el free | **Sí**, los términos lo permiten |
+| Límites | 15/min, 1.500/día | 30/min, 1.000/día |
+| Calidad en español rioplatense | Mejor | Peor |
+| Obediencia al "sólo JSON" | Mejor | Peor |
+| **Entrena con tus prompts** | **Sí** | **No** |
 
-Decide la última fila. Por acá viaja lo que una persona come y entrena: gratis
-son los dos, pero uno se lo queda. Los límites de Groq sobran por dos órdenes
-de magnitud para un usuario solo.
+Los dos riesgos abiertos de esta feature son las dos filas del medio, y Gemini
+las gana. Elegir el modelo peor para ganar la fila de privacidad era pagar en
+la moneda equivocada, porque **lo que viaja no identifica a nadie**: `Press
+banca (barbell), 4 series de 8 con 60 kg` y `milanesa con puré`. Sin email, sin
+nombre, sin id de usuario. Son strings anónimos sobre series y comida.
 
-Gemini queda soportado con `LLM_PROVIDER=gemini`, por si alguna vez la calidad
-en español lo justifica.
+Los límites de cualquiera de los dos sobran por dos órdenes de magnitud para un
+usuario solo.
+
+**Cuándo revisar esta decisión:** si las notas del atleta empiezan a llevar
+texto más personal —una molestia, una lesión—, la fila de privacidad pasa a
+pesar y Groq es un `LLM_PROVIDER=groq`.
 
 ### Lo que hay que mirar cuando esté andando
 
-`llama-3.3-70b` no es Claude. Dos cosas a vigilar:
+El modelo ya no es Claude. Dos cosas a vigilar:
 
-- **Obediencia al "solo JSON".** Los modelos abiertos envuelven en backticks o
-  agregan prosa más seguido. El parseo tolerante ya estaba y ahora tiene tests
-  que cubren backticks y texto alrededor, pero si falla mucho, el paso
-  siguiente es `response_format: json_object`, que Groq soporta.
-- **Español rioplatense con comida local.** Milanesa, facturas, provoleta.
-  Es el punto más probable de flaqueza y no está verificado contra el modelo
-  real.
+- **Obediencia al "solo JSON".** El parseo tolerante ya estaba y ahora tiene
+  tests que cubren backticks y prosa alrededor, pero si falla seguido, el paso
+  siguiente es `response_format`, que los dos proveedores soportan.
+- **Español rioplatense con comida local.** Milanesa, facturas, provoleta. Es
+  el punto más probable de flaqueza y no está verificado contra el modelo real.
+  Elegir Gemini lo baja, no lo elimina.
 
 El worker de Cloudflare también se portó, aunque hoy no esté en uso: dejar dos
 backends en proveedores distintos es una trampa para el que vuelva en tres
@@ -346,7 +358,7 @@ red y el Worker no tiene `process.env`.
 ## 5. Para decidir mañana
 
 - [x] ~~¿El parseo de comida va por Anthropic o se mete FatSecret?~~
-      Ni uno ni otro: va por Groq, gratis. Ver sección 2 y la 6.
+      Ni uno ni otro: va por Gemini, gratis. Ver sección 2 y la 6.
 - [x] ~~¿Las imágenes de ejercicios se sirven propias o desde el raw de GitHub?~~
       Propias. Ver sección 3.
 - [ ] ¿Se arranca por entrenador/alumno o por las dos features chicas primero?

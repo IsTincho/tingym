@@ -78,12 +78,12 @@ describe('llmConfig', () => {
     expect(llmConfigurado()).toBe(false);
   });
 
-  it('groq es el default y no hace falta nombrarlo', () => {
-    process.env.GROQ_API_KEY = 'gsk_x';
+  it('gemini es el default y no hace falta nombrarlo', () => {
+    process.env.GEMINI_API_KEY = 'x';
     const c = llmConfig();
-    expect(c.nombre).toBe('groq');
-    expect(c.url).toContain('api.groq.com');
-    expect(c.modelo).toBe('llama-3.3-70b-versatile');
+    expect(c.nombre).toBe('gemini');
+    expect(c.url).toContain('generativelanguage.googleapis.com');
+    expect(c.modelo).toBe('gemini-3.7-flash');
   });
 
   // El punto de toda esta capa: cambiar de proveedor es una variable, no una
@@ -91,18 +91,19 @@ describe('llmConfig', () => {
   // hizo.
   it('cambiar de proveedor es una sola variable', () => {
     process.env.LLM_API_KEY = 'x';
-    process.env.LLM_PROVIDER = 'gemini';
+    process.env.LLM_PROVIDER = 'groq';
     const c = llmConfig();
-    expect(c.nombre).toBe('gemini');
-    expect(c.url).toContain('generativelanguage.googleapis.com');
+    expect(c.nombre).toBe('groq');
+    expect(c.url).toContain('api.groq.com');
+    expect(c.modelo).toBe('llama-3.3-70b-versatile');
   });
 
   it('LLM_MODEL pisa el modelo del preset sin tocar la URL', () => {
-    process.env.GROQ_API_KEY = 'x';
+    process.env.GEMINI_API_KEY = 'x';
     process.env.LLM_MODEL = 'otro-modelo';
     const c = llmConfig();
     expect(c.modelo).toBe('otro-modelo');
-    expect(c.url).toContain('api.groq.com');
+    expect(c.url).toContain('generativelanguage.googleapis.com');
   });
 
   it('un proveedor que no existe no explota: degrada', () => {
@@ -172,6 +173,17 @@ describe('llmJson', () => {
     const r = await llmJson({ system: 's', user: 'u' });
     expect(r.ok).toBe(false);
     expect(r.motivo).toMatch(/límite|limite/i);
+  });
+
+  // El 404 es el error que aparece cuando Google retira un modelo, y ya pasó
+  // con gemini-2.0-flash. Decir solo "404" obliga a ir a leer codigo.
+  it('el 404 nombra el modelo y la variable que hay que tocar', async () => {
+    apuntarAlFalso();
+    proxima.status = 404;
+    const r = await llmJson({ system: 's', user: 'u' });
+    expect(r.ok).toBe(false);
+    expect(r.motivo).toContain('modelo-de-prueba');
+    expect(r.motivo).toContain('LLM_MODEL');
   });
 
   it('un 500 del proveedor degrada con el código', async () => {
