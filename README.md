@@ -70,17 +70,31 @@ npm test            # motor de progresión e insights
 
 ## Deploy
 
-El frontend lo despliega GitHub Actions en cada push a `main`
-(`.github/workflows/deploy-web.yml`). Necesita dos secrets cargados en
-Settings → Secrets and variables → Actions:
+El frontend lo despliega **Cloudflare Pages** solo, en cada push a `main`:
+el proyecto `tingym` está conectado a este repo por la integración de Git.
+No hay tokens ni secrets que mantener — Cloudflare tiene su propio permiso
+sobre el repo vía la GitHub App.
 
-| Secret | De dónde sale |
-|--------|---------------|
-| `CLOUDFLARE_API_TOKEN` | https://dash.cloudflare.com/profile/api-tokens, con permiso **Cloudflare Pages: Edit** |
-| `CLOUDFLARE_ACCOUNT_ID` | está en la URL del dashboard de Cloudflare |
+La configuración del build, si alguna vez hay que rehacerla:
 
-Sin esos secrets el workflow falla en el último paso y no rompe nada más: el
-build y los tests corren igual.
+| Opción | Valor | Por qué |
+|--------|-------|---------|
+| Framework preset | *None* | Es un monorepo con workspaces, no un preset conocido |
+| Root directory | `/` | El install va desde la raíz: `@gym/shared` es un workspace local y no está publicado. Desde `client/` npm lo busca en el registry y falla con un 404 |
+| Build command | `npm test && npm run build` | Los tests del motor de progresión son la red de seguridad: si se rompen, no se publica |
+| Build output directory | `client/dist` | |
+
+La versión de Node la fija `.node-version` (22). El `engines` del
+`package.json` pide `>=22` y el default de Pages no siempre coincide.
+
+> **Ojo si hay que recrear el proyecto:** Cloudflare **no** permite conectarle
+> Git a un proyecto de Pages que ya existe y nació como Direct Upload. Si el
+> proyecto pierde la conexión, hay que borrarlo y crearlo de nuevo con
+> *Import an existing Git repository* — y recrearlo con el mismo nombre para
+> no perder `tingym.pages.dev`.
+
+La API no se toca acá: la despliega Railway sola, y sus `watchPatterns` ya
+filtran los cambios que sólo tocan `client/`.
 
 A mano, si hace falta:
 
