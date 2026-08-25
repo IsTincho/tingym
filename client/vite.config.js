@@ -11,6 +11,8 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
+      // Las fuentes no van acá: viven en public/, así que salen en dist y las
+      // levanta el globPatterns de abajo. Listarlas duplicaría la entrada.
       includeAssets: ['icon.svg'],
       manifest: {
         name: 'TINGYM — registro de entrenamiento',

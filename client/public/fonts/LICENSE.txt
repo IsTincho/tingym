@@ -1,0 +1,7 @@
+Chakra Petch — Copyright (c) 2018 Cadson Demak (https://github.com/cadsondemak/chakra-petch)
+Licencia SIL Open Font License 1.1 — https://scripts.sil.org/OFL
+
+Sólo se incluye el subset "latin" (U+0000-00FF y puntuación básica), que es lo
+que la app usa: castellano con acentos, ¿ ¡ ñ y símbolos. Los subsets thai,
+vietnamita y latin-ext se dejaron afuera a propósito, son bytes que en el
+gimnasio no se leen.

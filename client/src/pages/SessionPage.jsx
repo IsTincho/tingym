@@ -245,7 +245,7 @@ function EntryCard({
                     {s.note && <span className="text-muted ml-2 italic">{s.note}</span>}
                   </span>
                   <button
-                    className="text-muted text-sm px-2 min-h-9 active:text-danger"
+                    className="text-muted text-sm px-3 min-h-11 active:text-danger"
                     onClick={() => removeSet(sessionId, index, i)}
                     aria-label={`Borrar serie ${i + 1}`}
                   >
@@ -423,7 +423,7 @@ function SetLogger({ sessionId, entryIndex, entry, exercise, openingWeight }) {
 
   return (
     <div className="space-y-2">
-      <div className="flex gap-2">
+      <div className="flex flex-col gap-3 min-[360px]:flex-row min-[360px]:gap-2">
         {!sinCarga && (
           <div className="flex-1">
             <span className="block label-hud text-[10px] text-muted mb-1.5">Peso (kg)</span>
@@ -454,7 +454,7 @@ function SetLogger({ sessionId, entryIndex, entry, exercise, openingWeight }) {
           </div>
         )}
 
-        <div className={sinCarga ? 'flex-1' : 'w-[46%]'}>
+        <div className={sinCarga ? 'flex-1' : 'w-full min-[360px]:w-[46%]'}>
           <span className="block label-hud text-[10px] text-muted mb-1.5">
             {exercise?.loadType === 'time' ? 'Segundos' : 'Reps'}
           </span>

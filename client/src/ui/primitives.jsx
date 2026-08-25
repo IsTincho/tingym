@@ -10,7 +10,7 @@ export const Button = forwardRef(function Button(
 ) {
   const base =
     'relative inline-flex items-center justify-center gap-2 min-h-12 px-5 chamfer-sm ' +
-    'font-display uppercase tracking-[0.14em] text-sm font-bold ' +
+    'font-display uppercase tracking-[0.1em] text-sm font-bold ' +
     'transition-[transform,box-shadow,opacity,background-color] active:scale-[0.98] ' +
     'disabled:opacity-35 disabled:active:scale-100 disabled:shadow-none select-none';
   const variants = {

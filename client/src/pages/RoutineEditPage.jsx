@@ -132,7 +132,7 @@ export default function RoutineEditPage() {
                   <div className="flex flex-col gap-1">
                     <Button
                       variant="secondary"
-                      className="min-h-9 px-3"
+                      className="min-h-11 px-3"
                       aria-label="Subir"
                       disabled={i === 0}
                       onClick={() => moveSlot(routine._id, day.key, i, -1)}
@@ -141,7 +141,7 @@ export default function RoutineEditPage() {
                     </Button>
                     <Button
                       variant="secondary"
-                      className="min-h-9 px-3"
+                      className="min-h-11 px-3"
                       aria-label="Bajar"
                       disabled={i === day.slots.length - 1}
                       onClick={() => moveSlot(routine._id, day.key, i, 1)}

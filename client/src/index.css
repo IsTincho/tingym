@@ -1,5 +1,26 @@
 @import 'tailwindcss';
 
+/* Chakra Petch, autohospedada y en el precache del service worker: la app
+   tiene que verse igual en el subsuelo del gimnasio que con wifi. Sólo el
+   subset latin (~10 KB por peso); el resto de los idiomas no se usa.
+   `swap` y no `block`: primero se lee con la fuente del sistema y después
+   cambia. Texto invisible en la primera carga es peor que un reflow. */
+@font-face {
+  font-family: 'Chakra Petch';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('/fonts/chakra-petch-500.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Chakra Petch';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('/fonts/chakra-petch-700.woff2') format('woff2');
+}
+
 /* NEON RIG — HUD de terminal industrial.
    Un solo tema (oscuro): el doc descarta el toggle claro/oscuro en V1.
    Rojo neon para la accion, cian y magenta para el codigo de veredictos. */
@@ -20,10 +41,13 @@
   --color-warn: #ffb020;
   --color-danger: #ff2a4a;
 
-  /* Display monoespaciada del sistema: la app es offline-first y una fuente
-     remota rompe el arranque sin senal. Cero requests, mismo caracter. */
-  --font-display: ui-monospace, 'SFMono-Regular', 'SF Mono', 'Cascadia Mono',
-    'Roboto Mono', Menlo, Consolas, monospace;
+  /* Chakra Petch para titulos, etiquetas y numeros. Se eligio sobre las
+     alternativas mono por una razon de pantalla chica: el mono ocupa ~25% mas
+     de ancho para el mismo texto, y en 360 px eso decide si "PROGRESO" entra
+     en la pestaña o se corta. El mono del sistema queda de fallback mientras
+     carga y si el woff2 falla. */
+  --font-display: 'Chakra Petch', ui-monospace, 'SFMono-Regular', 'SF Mono',
+    'Cascadia Mono', 'Roboto Mono', Menlo, Consolas, monospace;
   --font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
 }
 
