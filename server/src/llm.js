@@ -7,41 +7,39 @@
 // alcanza y no hay una dependencia mas que actualizar. Cambiar de proveedor es
 // cambiar una URL y un nombre de modelo.
 //
-// Por que Gemini por defecto: los dos son gratis sin tarjeta, pero
-// gemini-3.7-flash es bastante mejor que llama-3.3-70b en las dos cosas que
-// esta app necesita —espanol rioplatense con nombres de comida local, y
-// obedecer un "devolve solo JSON".
+// Por que Groq por defecto. Se probo Gemini contra la API real y su plan
+// gratis da VEINTE requests por dia y por modelo. No 1.500: veinte. Sale del
+// cuerpo del 429, que es el unico lugar donde figura:
 //
-// La contra de Gemini es que los terminos del plan gratis permiten que Google
-// entrene con los prompts. Se evaluo y se acepto: lo que viaja es "Press banca
-// (barbell), 4 series de 8 con 60 kg" y "milanesa con pure". Sin email, sin
-// nombre, sin id de usuario. Son strings anonimos sobre series y comida.
+//   quotaId: GenerateRequestsPerDayPerProjectPerModel-FreeTier
+//   quotaValue: 20, model: gemini-3.6-flash
 //
-// Si eso igual molesta —por ejemplo si algun dia se manda texto libre mas
-// personal en las notas del atleta—, Groq no entrena con nada ni en el plan
-// gratis, y cambiar es LLM_PROVIDER=groq. Esa es toda la migracion.
+// Cuatro comidas anotadas y tres ejercicios con veredicto ya son la mitad del
+// dia. Groq da 1.000 por dia: cincuenta veces mas. Gemini quedo descartado por
+// cuota, no por calidad —la calidad medida estaba bien.
+//
+// De yapa, Groq tampoco entrena con lo que le mandas ni en el plan gratis,
+// cosa que el free tier de Gemini si permite en sus terminos.
+//
+// Gemini sigue soportado con LLM_PROVIDER=gemini. Sirve para probar, o si
+// algun dia se paga el plan y la cuota deja de importar.
 
 const PROVEEDORES = {
-  gemini: {
-    url: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',
-    // 15 req/min y 1.500 por dia en el plan gratis. Para un usuario que anota
-    // unas diez series y tres comidas por dia, sobra por dos ordenes.
-    //
-    // 3.6 y no 3.7: medido contra la API real, 3.7-flash devuelve 503
-    // ("high demand") o cuelga mas de 60s en el plan gratis. 3.6 es ademas el
-    // reemplazo que sugiere Google en el 404 de los modelos 2.5.
-    //
-    // Pinneado y no `gemini-flash-latest` porque el alias apunta hoy al 3.7
-    // saturado. La contra de pinnear es que envejece: Google ya apago 2.0 y
-    // 2.5 dejo de estar para cuentas nuevas. Cuando pase, la API tira 404 y el
-    // mensaje de abajo dice exactamente que variable tocar.
-    modelo: 'gemini-3.6-flash',
-  },
   groq: {
     url: 'https://api.groq.com/openai/v1/chat/completions',
-    // 30 req/min y 1.000 por dia. No entrena con los prompts, ni en el plan
-    // gratis: es la alternativa si eso llega a importar.
+    // 30 req/min y 1.000 por dia en el plan gratis, sin tarjeta.
     modelo: 'llama-3.3-70b-versatile',
+  },
+  gemini: {
+    url: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',
+    // SOLO 20 requests por dia y por modelo en el plan gratis. Ver la nota de
+    // arriba antes de elegirlo.
+    //
+    // 3.6 y no 3.7: medido, 3.7-flash devuelve 503 ("high demand") o cuelga
+    // mas de 60s. 3.6 es ademas el reemplazo que sugiere Google en el 404 de
+    // los modelos 2.5. El alias `gemini-flash-latest` tampoco sirve: apunta
+    // al 3.7 saturado.
+    modelo: 'gemini-3.6-flash',
   },
   openai: {
     url: 'https://api.openai.com/v1/chat/completions',
@@ -57,7 +55,7 @@ const PROVEEDORES = {
  * el modo degradado: la app funciona igual, sin la capa de IA.
  */
 export function llmConfig() {
-  const nombre = process.env.LLM_PROVIDER ?? 'gemini';
+  const nombre = process.env.LLM_PROVIDER ?? 'groq';
   const preset = PROVEEDORES[nombre];
   if (!preset) return null;
 
@@ -165,13 +163,14 @@ export async function llmJson({ system, user, maxTokens = 2000, timeoutMs = 30_0
       const detalle = await res.text().catch(() => '');
       // Los dos codigos que tienen una causa concreta se nombran, porque
       // "la API respondio 404" no le dice a nadie que hacer:
-      //   429 = es el unico que se arregla esperando, y con un plan gratis es
-      //         el que va a aparecer.
+      //   429 = con un plan gratis es el que va a aparecer. No promete
+      //         cuanto hay que esperar porque puede ser un minuto o un dia:
+      //         el free tier de Gemini son 20 requests DIARIOS por modelo.
       //   404 = casi siempre el modelo se retiro. Pasa: Google ya apago
       //         gemini-2.0-flash. Se arregla con LLM_MODEL, sin tocar codigo.
       const motivo =
         res.status === 429
-          ? 'límite de la API alcanzado, probá en un minuto'
+          ? 'límite de la API alcanzado — puede ser por minuto o diario'
           : res.status === 404
             ? `el modelo "${cfg.modelo}" no existe o se retiró — cambiá LLM_MODEL`
             : `la API respondió ${res.status}`;

@@ -78,12 +78,12 @@ describe('llmConfig', () => {
     expect(llmConfigurado()).toBe(false);
   });
 
-  it('gemini es el default y no hace falta nombrarlo', () => {
-    process.env.GEMINI_API_KEY = 'x';
+  it('groq es el default y no hace falta nombrarlo', () => {
+    process.env.GROQ_API_KEY = 'gsk_x';
     const c = llmConfig();
-    expect(c.nombre).toBe('gemini');
-    expect(c.url).toContain('generativelanguage.googleapis.com');
-    expect(c.modelo).toBe('gemini-3.6-flash');
+    expect(c.nombre).toBe('groq');
+    expect(c.url).toContain('api.groq.com');
+    expect(c.modelo).toBe('llama-3.3-70b-versatile');
   });
 
   // El punto de toda esta capa: cambiar de proveedor es una variable, no una
@@ -91,19 +91,19 @@ describe('llmConfig', () => {
   // hizo.
   it('cambiar de proveedor es una sola variable', () => {
     process.env.LLM_API_KEY = 'x';
-    process.env.LLM_PROVIDER = 'groq';
+    process.env.LLM_PROVIDER = 'gemini';
     const c = llmConfig();
-    expect(c.nombre).toBe('groq');
-    expect(c.url).toContain('api.groq.com');
-    expect(c.modelo).toBe('llama-3.3-70b-versatile');
+    expect(c.nombre).toBe('gemini');
+    expect(c.url).toContain('generativelanguage.googleapis.com');
+    expect(c.modelo).toBe('gemini-3.6-flash');
   });
 
   it('LLM_MODEL pisa el modelo del preset sin tocar la URL', () => {
-    process.env.GEMINI_API_KEY = 'x';
+    process.env.GROQ_API_KEY = 'x';
     process.env.LLM_MODEL = 'otro-modelo';
     const c = llmConfig();
     expect(c.modelo).toBe('otro-modelo');
-    expect(c.url).toContain('generativelanguage.googleapis.com');
+    expect(c.url).toContain('api.groq.com');
   });
 
   it('un proveedor que no existe no explota: degrada', () => {

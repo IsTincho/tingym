@@ -366,13 +366,27 @@ La calidad cuando responde está bien: asado con chorizo y morcilla 950 kcal /
 60 g, milanesa con puré 670 / 32. Plausibles. **El problema no es el modelo, es
 la disponibilidad.**
 
-Un botón que tarda 20 segundos de mediana y falla una de cada cuatro veces es
-peor que no tener botón. Con la evidencia en la mano, **la decisión de Gemini
-sobre Groq queda para revisar**: se eligió Gemini por calidad de modelo, y esa
-ventaja no sirve de nada si la llamada no vuelve. Groq corre modelos abiertos
-en hardware propio y es de los proveedores más rápidos que hay; falta medirlo
-con una key para comparar en igualdad de condiciones. Es `LLM_PROVIDER=groq`
-más la key, sin tocar código.
+**Y después apareció el número que cierra la discusión.** Persiguiendo los 429
+salió el cuerpo del error, que es el único lugar donde Google dice la cuota
+real:
+
+```
+quotaId:    GenerateRequestsPerDayPerProjectPerModel-FreeTier
+quotaValue: 20
+model:      gemini-3.6-flash
+```
+
+**Veinte requests por día.** No 1.500, que es lo que dicen los blogs — deben
+referirse a otro modelo o a otra época. Cuatro comidas anotadas y tres
+ejercicios con veredicto son la mitad del día.
+
+Eso descarta Gemini, y no por calidad. El default vuelve a **Groq**, que da
+1.000 por día: cincuenta veces más. La cuota de Gemini es por modelo, así que
+se podría estirar rotando modelos, pero es frágil y no vale la pena.
+
+**Queda sin verificar la calidad de Groq**, por la misma razón que antes: no
+hay key. Lo que sí está medido es que la de Gemini alcanzaba, así que si Groq
+se queda corto en español rioplatense, el problema es real y hay que mirarlo.
 
 ---
 

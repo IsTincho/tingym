@@ -78,16 +78,16 @@ export function parseVerdict(text) {
 // el Worker no tiene process.env, asi que no puede importar el del server.
 // Duplicar treinta lineas es mas barato que ensuciar shared con la capa de red.
 //
-// Gemini por defecto, Groq como alternativa. El porque esta en
-// server/src/llm.js, que es el gemelo de esto.
+// Groq por defecto: el plan gratis de Gemini da 20 requests por dia. El porque
+// completo esta en server/src/llm.js, que es el gemelo de esto.
 const PROVEEDORES = {
-  gemini: {
-    url: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',
-    modelo: 'gemini-3.6-flash',
-  },
   groq: {
     url: 'https://api.groq.com/openai/v1/chat/completions',
     modelo: 'llama-3.3-70b-versatile',
+  },
+  gemini: {
+    url: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',
+    modelo: 'gemini-3.6-flash',
   },
   openai: {
     url: 'https://api.openai.com/v1/chat/completions',
@@ -97,7 +97,7 @@ const PROVEEDORES = {
 };
 
 export function llmConfig(env) {
-  const preset = PROVEEDORES[env.LLM_PROVIDER ?? 'gemini'];
+  const preset = PROVEEDORES[env.LLM_PROVIDER ?? 'groq'];
   if (!preset) return null;
 
   const key = env.LLM_API_KEY || env.GROQ_API_KEY || env.GEMINI_API_KEY || env.OPENAI_API_KEY || '';

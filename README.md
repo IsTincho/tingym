@@ -147,50 +147,44 @@ Together y un Ollama local hablan todos ese formato, así que **cambiar de
 proveedor es una variable de entorno**, no una reescritura. Este proyecto ya
 cambió una vez; la segunda no tiene que doler.
 
-| Proveedor | Gratis | Límites | ¿Entrena con tus prompts? |
-|-----------|--------|---------|---------------------------|
-| **Gemini** (default) | Sí, sin tarjeta | 15 req/min, 1.500/día | **Sí**, los términos del free tier lo permiten |
-| Groq | Sí, sin tarjeta | 30 req/min, 1.000/día | **No**, tampoco en el plan gratis |
+| Proveedor | Gratis | Cuota diaria | ¿Entrena con tus prompts? |
+|-----------|--------|--------------|---------------------------|
+| **Groq** (default) | Sí, sin tarjeta | **1.000/día**, 30/min | No, tampoco en el plan gratis |
+| Gemini | Sí, sin tarjeta | **20/día por modelo** | Sí, los términos del free tier lo permiten |
 
-Gemini es el default porque `gemini-3.6-flash` es bastante mejor que
-`llama-3.3-70b` en las dos cosas que esta app necesita: **español rioplatense
-con nombres de comida local** —milanesa, facturas, provoleta— y **obedecer un
-"devolvé sólo JSON"**. Los dos son los riesgos abiertos de esta feature, así
-que se eligió el modelo que los baja.
+**El plan gratis de Gemini da 20 requests por día, no 1.500.** Está medido
+contra la API real, y el número sólo aparece en el cuerpo del 429:
 
-La contra es la última columna, y se aceptó a conciencia. Lo que viaja es
-`Press banca (barbell), 4 series de 8 con 60 kg` y `milanesa con puré`: sin
-email, sin nombre, sin id de usuario. Son strings anónimos sobre series y
-comida. Si algún día las notas del atleta llevan texto más personal, esa
-decisión hay que revisarla — y ahí Groq no entrena con nada.
-
-Los límites de cualquiera de los dos sobran por dos órdenes de magnitud para un
-usuario que anota diez series y tres comidas por día.
-
-```bash
-railway variables --service api --set "GEMINI_API_KEY=..."
+```
+quotaId:    GenerateRequestsPerDayPerProjectPerModel-FreeTier
+quotaValue: 20
+model:      gemini-3.6-flash
 ```
 
-La key se saca en https://aistudio.google.com/apikey, sin tarjeta. Para pasarse
-a Groq alcanza con `LLM_PROVIDER=groq` y una key de
-https://console.groq.com/keys.
+Cuatro comidas anotadas y tres ejercicios con veredicto son la mitad del día.
+Por eso el default es Groq, que da cincuenta veces más. No es por calidad: la
+calidad medida de Gemini estaba bien (asado con chorizo y morcilla 950 kcal /
+60 g, milanesa con puré 670 / 32).
 
-El modelo va pinneado y no en un alias tipo `gemini-flash-latest`: hoy ese
-alias apunta a `gemini-3.7-flash`, que en el plan gratis devuelve 503 o cuelga
-más de 60 s. La contra de pinnear es que envejece —`2.0-flash` está apagado y
-`2.5-flash` ya no se da a cuentas nuevas—, así que cuando pase, la API responde
-404 y el mensaje de error nombra el modelo y te dice que toques `LLM_MODEL`.
+La cuota de Gemini es **por modelo**, así que se puede estirar rotando modelos,
+pero es frágil y no vale la pena.
 
-**Ojo con `max_tokens` si tocás el código.** Los modelos que razonan gastan el
-presupuesto pensando y la respuesta sale de lo que sobra: con 200 tokens el
-JSON volvía cortado al medio. Por eso se piden miles para respuestas de veinte.
+```bash
+railway variables --service api --set "GROQ_API_KEY=gsk_..."
+```
 
-**Latencia medida en el plan gratis de Gemini:** mediana 20 s, y una de cada
-cuatro llamadas falla con 503. La calidad de las estimaciones es buena, pero la
-disponibilidad no. Ver `PROXIMOS-PASOS.md` sección 6.
+La key se saca en https://console.groq.com/keys, sin tarjeta. Para probar
+Gemini: `LLM_PROVIDER=gemini` más `GEMINI_API_KEY`, sabiendo lo de las 20.
 
-`/api/health` devuelve qué proveedor y modelo quedaron activos —nunca la key—,
-así que después de tocar variables en Railway se confirma de un vistazo.
+**Ojo con `max_tokens` si tocás el código.** Los modelos que razonan —toda la
+familia Gemini 3.x— gastan el presupuesto pensando y la respuesta sale de lo
+que sobra. Con 200 tokens el JSON volvía cortado al medio, con
+`finish_reason: "length"`. Por eso se piden miles para respuestas de veinte; en
+un modelo que no razona sobra y no cuesta nada, porque frena al cerrar la llave.
+
+Otros modelos de Gemini que se probaron y no sirven: `gemini-3.7-flash`
+devuelve 503 "high demand" o cuelga más de 60 s; `gemini-flash-latest` apunta
+ahí; `2.5-flash` y `2.5-flash-lite` ya dan 404 para cuentas nuevas.
 
 ## Autenticación
 
