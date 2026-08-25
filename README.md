@@ -68,6 +68,23 @@ npm run dev:api     # la variante Worker, con D1 local
 npm test            # motor de progresión e insights
 ```
 
+Las fotos de los ejercicios están commiteadas en
+`client/public/exercises/<id>/`, así que no hay nada que bajar para trabajar.
+Si se agregan ejercicios al catálogo:
+
+```bash
+npm run fetch:exercise-images
+```
+
+Baja lo que falte de [Free Exercise DB](https://github.com/yuhonas/free-exercise-db)
+(Unlicense, dominio público), lo renombra al id del ejercicio y regenera
+`shared/src/exercisePhotos.js`. Es idempotente. La tabla de equivalencias vive
+en `scripts/fetch-exercise-images.mjs` y está indexada por **nombre** del
+catálogo: si renombrás un ejercicio, el script falla en vez de dejar la foto
+vieja pegada a un ejercicio que ya no es ese. Un ejercicio sin equivalente va
+como `null` explícito y se queda sin foto, que es preferible a una foto
+parecida-pero-no.
+
 ## Deploy
 
 El frontend lo despliega **Cloudflare Pages** solo, en cada push a `main`:

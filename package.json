@@ -15,7 +15,8 @@
     "dev:api": "npm run dev -w worker",
     "deploy:api": "npm run deploy -w worker",
     "deploy:web": "npm run build && wrangler pages deploy client/dist --project-name tingym --branch main",
-    "dev:server": "npm run dev -w server"
+    "dev:server": "npm run dev -w server",
+    "fetch:exercise-images": "node scripts/fetch-exercise-images.mjs"
   },
   "engines": {
     "node": ">=22"

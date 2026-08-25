@@ -1,29 +1,37 @@
 # Próximos pasos — investigación y decisiones pendientes
 
-> Escrito el 25/8/2026, para revisar con tiempo. Nada de acá está implementado:
-> son decisiones tomadas hasta donde se puede sin escribir código, con lo que
-> falta marcado explícitamente.
+> Escrito el 25/8/2026, para revisar con tiempo. Arrancó siendo decisiones
+> tomadas hasta donde se puede sin escribir código. La **sección 3 ya está
+> implementada** (ver "Hecho" ahí); las secciones 2 y 4 siguen sin una línea
+> escrita.
 >
 > **Advertencia sobre las fuentes:** los límites de rate y las licencias de la
-> sección 2 y 3 salen de la documentación de cada proyecto, no de haberlas
+> **sección 2** salen de la documentación de cada proyecto, no de haberlas
 > probado contra la API real — el entorno donde se investigó tenía la salida a
 > internet filtrada. Antes de construir encima de cualquiera de estas, hacer una
-> llamada de prueba y confirmar. Lo de la sección 4 sí está verificado: sale de
-> leer el código de este repo.
+> llamada de prueba y confirmar.
+>
+> La sección 3 ya no está en esa categoría: las 90 fotos se bajaron de verdad
+> desde el repo de Free Exercise DB. La sección 4 sale de leer el código de acá.
 
 ---
 
 ## 1. Lo que ya está hecho
 
-Dos commits en `main`, sin cambios de lógica: es CSS y clases.
-
 | Commit | Qué |
 |--------|-----|
 | `922b691` | Rediseño cyberpunk: rojo neón sobre negro, HUD de terminal |
 | `57455c9` | Chakra Petch autohospedada y pase mobile-first hasta 320 px |
+| `b6285d0` | Autodeploy por la integración de Git de Cloudflare Pages |
 
-El pase de 320 px encontró tres botones de 36 px de alto que venían de antes
-(el ✕ de borrar serie y las flechas ↑↓ de rutinas). Están en 44.
+Los dos primeros no tocan lógica: es CSS y clases. El pase de 320 px encontró
+tres botones de 36 px de alto que venían de antes (el ✕ de borrar serie y las
+flechas ↑↓ de rutinas). Están en 44.
+
+`b6285d0` cambia cómo se publica: se fue el workflow de GitHub Actions y el
+deploy lo maneja Cloudflare solo. **Cloudflare no permite conectarle Git a un
+proyecto de Pages que ya existe** y nació como Direct Upload, así que hubo que
+borrar `tingym` y recrearlo importando el repo.
 
 ---
 
@@ -104,14 +112,39 @@ PWA, que hoy son 9 entradas y 450 KB. Va con `CacheFirst` en el service worker:
 el ejercicio que miraste una vez queda disponible sin señal, que es justo cuando
 lo vas a querer. El resto no ocupa nada.
 
-Lo que falta:
+### Hecho — 25/8/2026
 
-- El mapeo entre el catálogo propio y los ids de Free Exercise DB. Son ~60
-  ejercicios en el seed, así que es a mano y una sola vez. Los que no matcheen
-  se quedan sin foto, y está bien.
-- Decidir si las imágenes se sirven desde Cloudflare Pages junto al frontend
-  (simple, gratis, y quedan en el mismo dominio) o desde el raw de GitHub
-  (cero laburo, pero dependencia de un tercero en el camino crítico).
+Las dos preguntas que quedaban se resolvieron así:
+
+**El mapeo está hecho: 45 de 48.** Vive en `scripts/fetch-exercise-images.mjs`,
+con clave por *nombre* del catálogo y no por id derivado — si alguien renombra
+un ejercicio, el script explota en vez de dejar la foto vieja pegada a un
+ejercicio que ya no es ese. Chequea las tres direcciones: catálogo sin mapear,
+mapa con entradas muertas, e ids que ya no existen en la fuente.
+
+Los tres sin foto son `Plancha lateral con elevación de cadera`, `Hollow hold`
+y `Plancha con toque de hombros`. Están en el mapa como `null` explícito, no
+ausentes: así "no hay equivalente" se distingue de "nos lo olvidamos". Preferir
+sin foto a una foto parecida no es pereza — al que mira la foto le falta saber
+cómo se hace, y una foto casi-igual lo confunde más que ninguna.
+
+**Se sirven propias**, desde `client/public/exercises/<id>/`. Son 5,8 MB por
+90 fotos: nada para el repo, y saca a `raw.githubusercontent.com` del camino
+crítico. Al renombrarlas con nuestro id, la ruta queda derivada del ejercicio y
+la app nunca se entera de que Free Exercise DB existe. El día que cambiemos de
+fuente no se toca una línea de UI.
+
+Detalles que salieron en el camino:
+
+- **Las 90 son 3:2** (88 en 850×567, 2 en 800×533). El contenedor usa esa misma
+  proporción: en cuadrado, `object-cover` recortaba los costados, que en una
+  foto instructiva es justo donde están la barra y los pies.
+- **Sin `loading="lazy"`.** Están arriba del fold, así que diferirlas no ahorra
+  un byte y agrega un viaje antes de que aparezcan.
+- Fondo blanco de estudio sobre tema negro: van en monocromo con el tinte rojo
+  del tema en `soft-light`. Se pierde el color de la remera del modelo.
+- El precache **no** se movió: sigue en 9 entradas y 453,7 KB. Las fotos van
+  por `runtimeCaching` con `CacheFirst`, verificado en el `sw.js` generado.
 
 ---
 
@@ -198,7 +231,8 @@ no necesita cambios: un entrenador es un usuario más. Lo que hace falta:
 
 - [ ] ¿El parseo de comida va por Anthropic o se mete FatSecret? (recomendado:
       Anthropic, sección 2)
-- [ ] ¿Las imágenes de ejercicios se sirven propias o desde el raw de GitHub?
+- [x] ~~¿Las imágenes de ejercicios se sirven propias o desde el raw de GitHub?~~
+      Propias. Ver sección 3.
 - [ ] ¿Se arranca por entrenador/alumno o por las dos features chicas primero?
 - [ ] Confirmar con una llamada real los límites de Open Food Facts antes de
       construir encima.

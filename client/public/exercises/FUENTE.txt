@@ -1,0 +1,6 @@
+Fotos de https://github.com/yuhonas/free-exercise-db
+Licencia: Unlicense (dominio publico). No exige atribucion.
+
+Renombradas al id de ejercicio de esta app por
+scripts/fetch-exercise-images.mjs. La tabla de equivalencias vive en ese
+script, no aca.

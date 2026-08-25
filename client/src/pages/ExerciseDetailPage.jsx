@@ -5,6 +5,7 @@ import { getExercise } from '../db/repo.js';
 import { exerciseHistory } from '../db/sessionRepo.js';
 import { Card, EmptyState, PageTitle, SectionLabel } from '../ui/primitives.jsx';
 import VerdictChip from '../ui/VerdictChip.jsx';
+import ExercisePhotos from '../ui/ExercisePhotos.jsx';
 import { relativeDate, setsLabel, shortDate, kg } from '../lib/format.js';
 
 export default function ExerciseDetailPage() {
@@ -59,6 +60,13 @@ export default function ExerciseDetailPage() {
           </p>
         )}
       </header>
+
+      {/* Antes del historial a proposito: el ejercicio que nunca hiciste es
+          justo el que necesitas ver como se hace. Si no hay foto no dibuja
+          nada, ni hueco ni cartel. */}
+      <div className="px-4 pb-4">
+        <ExercisePhotos exerciseId={exerciseId} name={exercise?.name ?? 'Ejercicio'} />
+      </div>
 
       {history.length === 0 ? (
         <EmptyState
