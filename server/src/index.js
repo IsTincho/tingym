@@ -4,6 +4,7 @@ import { connect } from './db.js';
 import authRoutes from './routes/auth.js';
 import syncRoutes from './routes/sync.js';
 import coachRoutes from './routes/coach.js';
+import mealRoutes from './routes/meals.js';
 
 const app = express();
 
@@ -22,6 +23,7 @@ app.get('/api/health', (_req, res) =>
 app.use('/api/auth', authRoutes);
 app.use('/api/sync', syncRoutes);
 app.use('/api/coach', coachRoutes);
+app.use('/api/meals', mealRoutes);
 
 // eslint-disable-next-line no-unused-vars
 app.use((err, _req, res, _next) => {

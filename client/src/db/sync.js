@@ -204,3 +204,25 @@ export async function requestVerdict(payload) {
     return null;
   }
 }
+
+/**
+ * Estima kcal y proteina del texto de una comida. Devuelve null cuando no se
+ * pudo —sin senal, sin key o error— y el usuario escribe el numero a mano,
+ * que es lo que hace hoy. `isCoachEnabled()` sirve para saber si ofrecerlo:
+ * es la misma API key detras de las dos features, asi que un solo flag las
+ * cubre a las dos.
+ *
+ * Ojo con el null: la IA tambien puede contestar `kcal: null` a proposito
+ * cuando el texto no describe comida ("comi bien"). Eso NO es un error y
+ * llega como estimacion valida con los dos numeros en null.
+ */
+export async function parseMeal(description) {
+  if (!API) return null;
+  if (!navigator.onLine) return null;
+  try {
+    const data = await call('/api/meals/parse', { body: { description } });
+    return data.estimate ?? null;
+  } catch {
+    return null;
+  }
+}

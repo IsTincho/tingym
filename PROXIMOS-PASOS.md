@@ -1,9 +1,9 @@
 # Próximos pasos — investigación y decisiones pendientes
 
 > Escrito el 25/8/2026, para revisar con tiempo. Arrancó siendo decisiones
-> tomadas hasta donde se puede sin escribir código. La **sección 3 ya está
-> implementada** (ver "Hecho" ahí); las secciones 2 y 4 siguen sin una línea
-> escrita.
+> tomadas hasta donde se puede sin escribir código. Las **secciones 2 y 3 ya
+> están implementadas** (ver "Hecho" en cada una); la sección 4 sigue sin una
+> línea escrita.
 >
 > **Advertencia sobre las fuentes:** los límites de rate y las licencias de la
 > **sección 2** salen de la documentación de cada proyecto, no de haberlas
@@ -77,12 +77,49 @@ Por qué esto y no una base de datos:
 de proteína o el yogur es su caso de uso real, y ahí 15 req/min sobra. Es la
 parte donde sí hace falta el número exacto y donde una estimación no sirve.
 
-Lo que falta decidir:
+### Hecho — 25/8/2026
 
-- Si el resultado del parseo se guarda como número editable (recomendado: el
-  usuario corrige y la corrección queda) o como valor cerrado.
-- Si se cachea el parseo por texto normalizado. "Pollo con arroz" se va a
-  escribir cincuenta veces y no tiene sentido pagar cincuenta llamadas.
+Implementado como `POST /api/meals/parse`, colgado del mismo mecanismo que el
+coach. Las dos preguntas abiertas se resolvieron por la recomendada:
+
+**Número editable.** La estimación llena los campos de kcal y proteína del
+formulario, y de ahí en más son tuyos: los pisás y la corrección queda. Es un
+diario, no un contador — el número es una sugerencia, no un candado.
+
+**Se cachea por texto normalizado**, en memoria y con techo de 500 entradas.
+La normalización aplana mayúsculas, tildes, espacios y puntuación de borde,
+pero **no** cantidades: `200 g de pollo` y `300 g de pollo` siguen siendo
+claves distintas. En memoria y no en Mongo a propósito: es un acelerador, no
+un dato. Si el proceso reinicia se pierde y no pasa nada.
+
+Decisiones que aparecieron al escribirlo:
+
+- **`kcal: null` es una respuesta válida, no un error.** "Comí bien" no tiene
+  calorías estimables, y el prompt pide explícitamente devolver null antes que
+  inventar un número. La UI lo distingue de un fallo de red, y en ninguno de
+  los dos casos pisa los números que ya hubieras cargado.
+- **Sólo se cachea lo que sirve.** Cachear una estimación vacía condenaría a
+  ese texto a no estimarse nunca más, aun si el fallo fue pasajero.
+- **Se muestra la confianza** ("estimación sobre una porción típica"). El
+  usuario tiene derecho a saber cuánto pesar el número: media quiere decir que
+  asumimos una porción, no que la contamos.
+- **No hay fallback determinista**, a diferencia del veredicto. No se puede
+  calcular calorías con una regla local. O estima la IA o escribís a mano, que
+  es exactamente lo que la app hace hoy.
+
+**Falta para que se encienda:** cargar `ANTHROPIC_API_KEY` en Railway. Hoy
+`/api/health` responde `coach: false` y el botón ni aparece.
+
+```bash
+railway variables --service api --set "ANTHROPIC_API_KEY=..."
+```
+
+**Sin verificar contra la API real:** la calidad de las estimaciones. El
+cableado está probado punta a punta contra un stub, y el esquema tiene tests,
+pero nadie le preguntó todavía a Anthropic cuántas calorías tiene una
+milanesa. Cuando cargues la key, la primera prueba es esa.
+
+Open Food Facts para código de barras sigue pendiente, sin empezar.
 
 ---
 
@@ -229,8 +266,8 @@ no necesita cambios: un entrenador es un usuario más. Lo que hace falta:
 
 ## 5. Para decidir mañana
 
-- [ ] ¿El parseo de comida va por Anthropic o se mete FatSecret? (recomendado:
-      Anthropic, sección 2)
+- [x] ~~¿El parseo de comida va por Anthropic o se mete FatSecret?~~
+      Anthropic, implementado. Ver sección 2.
 - [x] ~~¿Las imágenes de ejercicios se sirven propias o desde el raw de GitHub?~~
       Propias. Ver sección 3.
 - [ ] ¿Se arranca por entrenador/alumno o por las dos features chicas primero?

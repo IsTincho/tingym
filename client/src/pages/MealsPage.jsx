@@ -1,7 +1,8 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { MEAL_SLOTS, MEAL_SLOT_LABELS } from '@gym/shared';
 import { deleteMeal, listMeals, logMeal } from '../db/trackingRepo.js';
+import { isCoachEnabled, parseMeal } from '../db/sync.js';
 import { Button, Card, EmptyState, Field, Input, PageTitle, Select } from '../ui/primitives.jsx';
 import Sheet from '../ui/Sheet.jsx';
 import { relativeDate, startOfDay } from '../lib/format.js';
@@ -19,10 +20,57 @@ function slotSugerido(now = new Date()) {
   return 'snack';
 }
 
+// Etiqueta de la confianza que devuelve la estimacion. Se muestra porque el
+// numero es una estimacion y el usuario tiene derecho a saber cuanto pesarla:
+// "media" quiere decir que asumimos una porcion, no que la contamos.
+const CONFIANZA = {
+  alta: { texto: 'estimación con cantidades explícitas', clase: 'text-ok' },
+  media: { texto: 'estimación sobre una porción típica', clase: 'text-accent-2' },
+  baja: { texto: 'estimación floja, revisala', clase: 'text-warn' },
+};
+
 export default function MealsPage() {
   const meals = useLiveQuery(() => listMeals({ limit: 200 }), [], null);
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState(EMPTY);
+  // null mientras no se sabe: asi el boton no parpadea al abrir la pantalla.
+  const [iaDisponible, setIaDisponible] = useState(null);
+  const [estimando, setEstimando] = useState(false);
+  // { confidence } cuando salio bien, { error } cuando no. Nunca los dos.
+  const [aviso, setAviso] = useState(null);
+
+  useEffect(() => {
+    let vivo = true;
+    isCoachEnabled().then((ok) => vivo && setIaDisponible(ok));
+    return () => {
+      vivo = false;
+    };
+  }, []);
+
+  async function estimar() {
+    setEstimando(true);
+    setAviso(null);
+    const est = await parseMeal(draft.description.trim());
+    setEstimando(false);
+
+    if (!est) {
+      setAviso({ error: 'No se pudo estimar. Anotalo a mano.' });
+      return;
+    }
+    // Los dos en null es una respuesta valida del modelo: el texto no describe
+    // comida estimable. No es un fallo, pero para el usuario el resultado es
+    // el mismo, asi que se dice igual de claro.
+    if (est.kcal == null && est.proteinG == null) {
+      setAviso({ error: 'No pude sacar un número de eso. Probá con más detalle.' });
+      return;
+    }
+    setDraft((d) => ({
+      ...d,
+      kcal: est.kcal ?? d.kcal,
+      proteinG: est.proteinG ?? d.proteinG,
+    }));
+    setAviso({ confidence: est.confidence });
+  }
 
   // Agrupado por dia, mas nuevo primero.
   const dias = useMemo(() => {
@@ -50,6 +98,7 @@ export default function MealsPage() {
 
   function abrir() {
     setDraft({ ...EMPTY, slot: slotSugerido() });
+    setAviso(null);
     setOpen(true);
   }
 
@@ -142,10 +191,41 @@ export default function MealsPage() {
             <Input
               autoFocus
               value={draft.description}
-              onChange={(e) => setDraft({ ...draft, description: e.target.value })}
+              onChange={(e) => {
+                // El aviso habla de la descripcion anterior. Si cambia, deja
+                // de ser cierto y se va.
+                setAviso(null);
+                setDraft({ ...draft, description: e.target.value });
+              }}
               placeholder="Ej: 200 g de pollo, arroz y ensalada"
             />
           </Field>
+
+          {/* Sin API key configurada no se ofrece: un boton que siempre falla
+              es peor que no tenerlo. Mismo criterio que el analisis del coach. */}
+          {iaDisponible && (
+            <div>
+              <Button
+                type="button"
+                variant="cyan"
+                className="w-full"
+                onClick={estimar}
+                disabled={!draft.description.trim() || estimando}
+              >
+                {estimando ? 'Estimando…' : '▸ Estimar kcal y proteína'}
+              </Button>
+              {aviso && (
+                <p
+                  className={`text-sm mt-2 text-center ${
+                    aviso.error ? 'text-warn' : CONFIANZA[aviso.confidence].clase
+                  }`}
+                >
+                  {aviso.error ?? CONFIANZA[aviso.confidence].texto}
+                </p>
+              )}
+            </div>
+          )}
+
           <div className="grid grid-cols-2 gap-3">
             <Field label="Kcal" hint="Opcional">
               <Input

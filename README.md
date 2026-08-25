@@ -132,7 +132,7 @@ En el Worker: `wrangler secret put NOMBRE` desde `worker/`.
 | `MONGO_DB` | `gymapp` |
 | `JWT_SECRET` | Firma de los tokens. Ya configurada. |
 | `CORS_ORIGIN` | Orígenes permitidos, separados por coma |
-| `ANTHROPIC_API_KEY` | **Sin configurar.** Sin ella `/api/coach/verdict` devuelve el fallback determinista, y la app ni ofrece el botón de análisis (`/api/health` informa `coach: false`). |
+| `ANTHROPIC_API_KEY` | **Sin configurar.** Enciende las dos features de IA a la vez, porque es una sola key: `/api/coach/verdict` (sin ella, fallback determinista) y `/api/meals/parse` (sin ella, escribís kcal y proteína a mano). En los dos casos la app ni ofrece el botón — `/api/health` informa `coach: false`. |
 | `ANTHROPIC_MODEL` | Opcional, por defecto `claude-sonnet-5` |
 
 La key de Anthropic nunca toca el cliente: es la razón por la que existe el

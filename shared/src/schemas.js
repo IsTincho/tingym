@@ -133,6 +133,21 @@ export const mealSchema = z.object({
   clientUpdatedAt: isoDate,
 });
 
+// Estimacion de kcal y proteina a partir del texto de la comida.
+//
+// `null` en los dos numeros es una respuesta valida y esperada: "comi bien" no
+// tiene calorias estimables, y forzar un numero ahi seria inventarlo. El que
+// llama tiene que tratar null como "no se pudo", no como cero.
+//
+// No lleva `source`: a diferencia del veredicto, aca no hay fallback
+// determinista posible. O estima la IA o no estima nadie, y en ese caso el
+// usuario escribe el numero a mano, que es exactamente lo que hace hoy.
+export const mealEstimateSchema = z.object({
+  kcal: z.number().int().min(0).max(10000).nullable().default(null),
+  proteinG: z.number().min(0).max(500).nullable().default(null),
+  confidence: z.enum(['alta', 'media', 'baja']),
+});
+
 export const userSchema = z.object({
   _id: idSchema,
   email: z.string().email(),
