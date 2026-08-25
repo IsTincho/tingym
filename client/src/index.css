@@ -31,6 +31,19 @@
   --color-surface-2: #15171f;
   --color-line: #23262f;
   --color-text: #e8ecf3;
+  /* OJO: `muted` y `accent` ya estan en el piso de contraste al 100% —dan
+     5.58 y 5.48 sobre `ink`, contra los 4.5 que pide WCAG AA para texto
+     normal. NO les pongas modificador de opacidad: `text-muted/70` da 3.20 y
+     `text-accent/60` da 2.51, o sea texto que no se lee. Para bajarle
+     prominencia a algo, usa `muted` en vez de `text` — la jerarquia ya esta
+     en los tokens, no hace falta atenuarlos encima.
+
+     `accent-2` (el cian) es la excepcion: es tan brillante que aguanta hasta
+     56% de opacidad sin bajar de 4.5. Ahi el modificador es seguro.
+
+     Esto no es teorico: la primera pasada de diseno metio /60 y /70 en nueve
+     lugares y ninguno pasaba. En un tema oscuro se ve "atmosferico" hasta que
+     estas en el subsuelo del gimnasio con el telefono transpirado. */
   --color-muted: #7d8798;
 
   --color-accent: #ff2a4a;

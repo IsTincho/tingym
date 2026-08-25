@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { deterministicVerdict, detectPlateau, exerciseSeries } from '@gym/shared';
 import { getExercise } from '../db/repo.js';
 import { exerciseHistory } from '../db/sessionRepo.js';
-import { Card, EmptyState, PageTitle, SectionLabel } from '../ui/primitives.jsx';
+import { BackLink, Card, EmptyState, PageTitle, SectionLabel } from '../ui/primitives.jsx';
 import VerdictChip from '../ui/VerdictChip.jsx';
 import ExercisePhotos from '../ui/ExercisePhotos.jsx';
 import { relativeDate, setsLabel, shortDate, kg } from '../lib/format.js';
@@ -50,9 +50,7 @@ export default function ExerciseDetailPage() {
   return (
     <div>
       <header className="px-4 pt-[max(1rem,env(safe-area-inset-top))] pb-3">
-        <Link to="/progreso" className="label-hud text-[10px] text-muted active:text-accent">
-          ← Progreso
-        </Link>
+        <BackLink to="/progreso">← Progreso</BackLink>
         <PageTitle className="mt-2 text-xl">{exercise?.name ?? 'Ejercicio'}</PageTitle>
         {exercise?.notes && (
           <p className="text-sm text-muted mt-2 border-l-2 border-accent-3/50 pl-3">

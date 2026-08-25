@@ -188,7 +188,7 @@ function Header() {
   return (
     <header className="px-4 pt-[max(1rem,env(safe-area-inset-top))] pb-4">
       <PageTitle>Progreso</PageTitle>
-      <p className="label-hud text-[10px] text-muted/70 mt-1">volumen · series · tope</p>
+      <p className="label-hud text-[10px] text-muted mt-1">volumen · series · tope</p>
     </header>
   );
 }

@@ -1,5 +1,4 @@
 import { useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import {
   LOAD_TYPES,
@@ -9,7 +8,7 @@ import {
   PATTERNS,
 } from '@gym/shared';
 import { createExercise, deleteExercise, listExercises } from '../db/repo.js';
-import { Button, Card, Field, Input, PageTitle, SectionLabel, Select } from '../ui/primitives.jsx';
+import { BackLink, Button, Card, Field, Input, PageTitle, SectionLabel, Select } from '../ui/primitives.jsx';
 import Sheet from '../ui/Sheet.jsx';
 
 const EMPTY = {
@@ -56,9 +55,7 @@ export default function ExercisesPage() {
     <div>
       <header className="px-4 pt-[max(1rem,env(safe-area-inset-top))] pb-3 flex items-center justify-between">
         <div>
-          <Link to="/rutinas" className="label-hud text-[10px] text-muted active:text-accent">
-            ← Rutinas
-          </Link>
+          <BackLink to="/rutinas">← Rutinas</BackLink>
           <PageTitle className="mt-1">Ejercicios</PageTitle>
         </div>
         <Button onClick={() => setCreating(true)}>+ Nuevo</Button>
@@ -107,7 +104,7 @@ export default function ExercisesPage() {
           </section>
         ))}
         {groups.length === 0 && (
-          <p className="label-hud text-[11px] text-muted/70 py-8 text-center">
+          <p className="label-hud text-[11px] text-muted py-8 text-center">
             // nada con ese nombre
           </p>
         )}

@@ -46,7 +46,7 @@ export default function HomePage() {
       <header className="px-4 pt-[max(1rem,env(safe-area-inset-top))] pb-4 flex items-center justify-between">
         <div>
           <PageTitle>Hoy</PageTitle>
-          <p className="label-hud text-[10px] text-muted/70 mt-1">
+          <p className="label-hud text-[10px] text-muted mt-1">
             {active ? '● sesión abierta' : 'sistema listo'}
           </p>
         </div>
@@ -141,7 +141,7 @@ export default function HomePage() {
               <ul className="mt-2.5 space-y-1.5">
                 {ultima.entries.slice(0, 4).map((e, i) => (
                   <li key={i} className="text-sm num text-text/90">
-                    <span className="text-accent/60 mr-2">{String(i + 1).padStart(2, '0')}</span>
+                    <span className="text-muted mr-2">{String(i + 1).padStart(2, '0')}</span>
                     {setsLabel(e.sets)}
                   </li>
                 ))}
@@ -200,7 +200,7 @@ function RoutinePickerSheet({ open, routines, onClose, onPick }) {
       <div className="space-y-4">
         {routines.map((r) => (
           <div key={r._id}>
-            <p className="label-hud text-[10px] text-accent/80 mb-2.5">{r.name}</p>
+            <p className="label-hud text-[10px] text-accent mb-2.5">{r.name}</p>
             <ul className="space-y-2">
               {r.days.map((d) => (
                 <li key={d.key}>

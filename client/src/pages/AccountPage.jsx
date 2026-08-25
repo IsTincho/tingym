@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
 import { getMeta } from '../db/db.js';
 import { changePassword, clearSession, getToken, login, register, sync } from '../db/sync.js';
-import { Button, Card, Field, Input, PageTitle } from '../ui/primitives.jsx';
+import { BackLink, Button, Card, Field, Input, PageTitle } from '../ui/primitives.jsx';
 import { relativeDate } from '../lib/format.js';
 
 function PasswordForm() {
@@ -113,9 +112,7 @@ export default function AccountPage() {
   return (
     <div>
       <header className="px-4 pt-[max(1rem,env(safe-area-inset-top))] pb-3">
-        <Link to="/hoy" className="label-hud text-[10px] text-muted active:text-accent">
-          ← Hoy
-        </Link>
+        <BackLink to="/hoy">← Hoy</BackLink>
         <PageTitle className="mt-2">Cuenta</PageTitle>
       </header>
 

@@ -54,7 +54,7 @@ export default function SessionPage() {
             <span className="text-muted">/{session.entries.length}</span>
           </span>
         </div>
-        <p className="label-hud text-[10px] text-muted/70 mt-1">{relativeDate(session.date)}</p>
+        <p className="label-hud text-[10px] text-muted mt-1">{relativeDate(session.date)}</p>
         {/* Avance de la sesion: la unica metrica que importa mientras entrenas. */}
         <div className="mt-2.5 h-[3px] bg-surface-2 overflow-hidden">
           <div
@@ -69,7 +69,7 @@ export default function SessionPage() {
 
       <div className="px-4 space-y-3">
         {session.entries.length === 0 && (
-          <p className="label-hud text-[11px] text-muted/70 py-8 text-center">
+          <p className="label-hud text-[11px] text-muted py-8 text-center">
             // sesión libre: agregá el primer ejercicio
           </p>
         )}
@@ -173,7 +173,7 @@ function EntryCard({
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <p className="font-semibold flex items-baseline gap-2">
-              <span className="num text-[11px] text-accent/60 shrink-0">
+              <span className="num text-[11px] text-muted shrink-0">
                 {String(index + 1).padStart(2, '0')}
               </span>
               <span className="truncate">{exercise?.name ?? 'Ejercicio'}</span>
@@ -235,7 +235,7 @@ function EntryCard({
                              border-l-2 border-accent/40"
                 >
                   <span className="text-sm num">
-                    <span className="text-accent/60 mr-2.5">
+                    <span className="text-muted mr-2.5">
                       {String(i + 1).padStart(2, '0')}
                     </span>
                     {setLabel(s)}
@@ -245,7 +245,7 @@ function EntryCard({
                     {s.note && <span className="text-muted ml-2 italic">{s.note}</span>}
                   </span>
                   <button
-                    className="text-muted text-sm px-3 min-h-11 active:text-danger"
+                    className="text-muted text-sm px-3 min-w-11 min-h-11 active:text-danger"
                     onClick={() => removeSet(sessionId, index, i)}
                     aria-label={`Borrar serie ${i + 1}`}
                   >

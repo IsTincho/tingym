@@ -1,4 +1,5 @@
 import { forwardRef } from 'react';
+import { Link } from 'react-router-dom';
 
 const cx = (...c) => c.filter(Boolean).join(' ');
 
@@ -57,7 +58,7 @@ export function Field({ label, hint, error, children }) {
 
 export const inputClass =
   'w-full min-h-12 px-3 chamfer-sm bg-surface-2 border border-line text-text font-display ' +
-  'placeholder:text-muted/50 placeholder:font-sans outline-none ' +
+  'placeholder:text-muted placeholder:font-sans outline-none ' +
   'transition-[border-color,box-shadow] focus:border-accent focus:glow-red-soft';
 
 export function Input({ className, ...props }) {
@@ -72,11 +73,33 @@ export function EmptyState({ title, hint, action }) {
   return (
     <div className="text-center py-16 px-6">
       {/* Marca de sistema sin datos: el vacio tambien es una pantalla. */}
-      <p className="label-hud text-[11px] text-accent/70 mb-3">// sin datos</p>
+      <p className="label-hud text-[11px] text-accent mb-3">// sin datos</p>
       <p className="font-display uppercase tracking-[0.1em] font-bold">{title}</p>
       {hint && <p className="text-muted text-sm mt-2">{hint}</p>}
       {action && <div className="mt-6 flex justify-center">{action}</div>}
     </div>
+  );
+}
+
+// Link de volver de las pantallas de detalle.
+//
+// Existe como componente porque estaba copiado igual en cuatro lados y en los
+// cuatro medía 13 px de alto: un <a> inline toma la altura de la línea, no la
+// del dedo. Es el control mas usado de una pantalla de detalle y era el mas
+// chico de la app.
+//
+// El -ml-2/px-2 agranda el area tocable hacia el margen de la pagina sin
+// mover el texto: queda alineado con el titulo de abajo, pero se puede errar
+// dos milimetros a la izquierda y igual funciona.
+export function BackLink({ to, children }) {
+  return (
+    <Link
+      to={to}
+      className="inline-flex items-center min-h-11 -ml-2 px-2 label-hud text-[10px]
+                 text-muted active:text-accent"
+    >
+      {children}
+    </Link>
   );
 }
 

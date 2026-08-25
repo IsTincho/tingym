@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { MUSCLE_GROUP_LABELS } from '@gym/shared';
 import {
@@ -14,7 +14,7 @@ import {
   updateRoutine,
   updateSlot,
 } from '../db/repo.js';
-import { Button, Card, EmptyState, Field, Input } from '../ui/primitives.jsx';
+import { BackLink, Button, Card, EmptyState, Field, Input } from '../ui/primitives.jsx';
 import Sheet from '../ui/Sheet.jsx';
 
 function restLabel(seconds) {
@@ -49,9 +49,7 @@ export default function RoutineEditPage() {
   return (
     <div>
       <header className="px-4 pt-[max(1rem,env(safe-area-inset-top))] pb-3">
-        <Link to="/rutinas" className="label-hud text-[10px] text-muted active:text-accent">
-          ← Rutinas
-        </Link>
+        <BackLink to="/rutinas">← Rutinas</BackLink>
         {/* El nombre se edita en el lugar: no hay pantalla de "editar rutina". */}
         <input
           className="mt-2 w-full bg-transparent font-display font-bold text-2xl uppercase
@@ -99,7 +97,7 @@ export default function RoutineEditPage() {
       ) : day ? (
         <div className="px-4 space-y-3">
           {day.slots.length === 0 && (
-            <p className="label-hud text-[11px] text-muted/70 py-8 text-center">
+            <p className="label-hud text-[11px] text-muted py-8 text-center">
               // este día no tiene ejercicios
             </p>
           )}
@@ -114,7 +112,7 @@ export default function RoutineEditPage() {
                     onClick={() => setSheet({ type: 'slot', dayKey: day.key, index: i })}
                   >
                     <p className="font-semibold flex items-baseline gap-2">
-                      <span className="num text-[11px] text-accent/60 shrink-0">
+                      <span className="num text-[11px] text-muted shrink-0">
                         {String(i + 1).padStart(2, '0')}
                       </span>
                       <span className="truncate">{ex?.name ?? 'Ejercicio borrado'}</span>
@@ -281,7 +279,7 @@ function PickerSheet({ sheet, routineId, exercises, onClose }) {
           </li>
         ))}
         {filtered.length === 0 && (
-          <li className="label-hud text-[11px] text-muted/70 py-8 text-center">
+          <li className="label-hud text-[11px] text-muted py-8 text-center">
             Nada con ese nombre. Creálo en la pestaña Ejercicios.
           </li>
         )}

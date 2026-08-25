@@ -150,7 +150,7 @@ export default function MealsPage() {
                         )}
                       </div>
                       <button
-                        className="text-muted text-sm px-2 min-h-11 shrink-0 active:text-danger"
+                        className="text-muted text-sm px-2 min-w-11 min-h-11 shrink-0 active:text-danger"
                         onClick={() => deleteMeal(m._id)}
                         aria-label="Borrar comida"
                       >

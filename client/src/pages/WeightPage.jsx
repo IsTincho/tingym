@@ -93,7 +93,7 @@ export default function WeightPage() {
                     </p>
                   </div>
                   <button
-                    className="text-muted text-sm px-3 min-h-11 active:text-danger"
+                    className="text-muted text-sm px-3 min-w-11 min-h-11 active:text-danger"
                     onClick={() => deleteBodyweight(e._id)}
                     aria-label="Borrar pesaje"
                   >

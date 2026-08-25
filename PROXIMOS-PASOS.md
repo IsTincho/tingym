@@ -23,6 +23,37 @@
 | `922b691` | Rediseño cyberpunk: rojo neón sobre negro, HUD de terminal |
 | `57455c9` | Chakra Petch autohospedada y pase mobile-first hasta 320 px |
 | `b6285d0` | Autodeploy por la integración de Git de Cloudflare Pages |
+| `19f7395` | Fotos de ejercicios: 45 de 48, autohospedadas (sección 3) |
+| `2e76eea` | Estimación de kcal y proteína del texto de la comida (sección 2) |
+
+### Pasada de contraste y tap targets — 25/8/2026
+
+Auditoría medida sobre las nueve pantallas, a 320 px. Encontró dos cosas, y las
+dos eran un patrón, no casos sueltos.
+
+**Contraste: los modificadores de opacidad eran el problema.** `muted` y
+`accent` ya están en el piso al 100% —5,58 y 5,48 sobre `ink`, contra los 4,5
+que pide WCAG AA. Cualquier `/60` o `/70` encima los hunde por debajo:
+`text-muted/70` da 3,20 y `text-accent/60` da 2,51. Estaban en nueve lugares y
+ninguno pasaba.
+
+El cian (`accent-2`) es la excepción: aguanta hasta 56 % de opacidad sin bajar
+de 4,5, así que ahí el modificador se dejó.
+
+Los ordinales que estaban en `accent/60` fueron a `muted`, no a `accent` pleno:
+un numerito de orden en rojo al 100 % grita más que el nombre del ejercicio que
+acompaña. La razón quedó escrita arriba del token en `index.css`, que es donde
+la va a leer el próximo que quiera atenuar algo.
+
+**Tap targets: la pasada anterior arregló alto, no ancho.** Los ✕ de borrar
+medían 29×44 y 37×44. Y peor: los cuatro links de volver medían **13 px de
+alto** —un `<a>` inline toma la altura de la línea, no la del dedo—, siendo el
+control más usado de cada pantalla de detalle. Ahora son un `BackLink` en
+`primitives.jsx`, 53×44, con el área tocable extendida hacia el margen sin
+mover el texto.
+
+Después de la pasada: cero fallos de contraste y cero tap targets chicos en las
+nueve pantallas.
 
 Los dos primeros no tocan lógica: es CSS y clases. El pase de 320 px encontró
 tres botones de 36 px de alto que venían de antes (el ✕ de borrar serie y las
