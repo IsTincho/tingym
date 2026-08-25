@@ -38,6 +38,8 @@ const PROVEEDORES = {
     // NO usar qwen/qwen3.6-27b: filtra bloques <think> dentro del content y
     // el JSON no parsea nunca. Probado, 0 de 10.
     modelo: 'openai/gpt-oss-120b',
+    // No razona antes de contestar, asi que no hace falta presupuesto extra.
+    holguraPensamiento: 0,
   },
   gemini: {
     url: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',
@@ -49,6 +51,9 @@ const PROVEEDORES = {
     // los modelos 2.5. El alias `gemini-flash-latest` tampoco sirve: apunta
     // al 3.7 saturado.
     modelo: 'gemini-3.6-flash',
+    // Toda la familia 3.x razona primero y la respuesta sale de lo que sobra.
+    // Sin esta holgura el JSON vuelve cortado al medio.
+    holguraPensamiento: 1500,
   },
   openai: {
     url: 'https://api.openai.com/v1/chat/completions',
@@ -83,7 +88,7 @@ export function llmConfig() {
   const modelo = process.env.LLM_MODEL || preset.modelo;
   if (!url || !modelo) return null;
 
-  return { nombre, url, modelo, key };
+  return { nombre, url, modelo, key, holguraPensamiento: preset.holguraPensamiento ?? 0 };
 }
 
 export function llmConfigurado() {
@@ -128,19 +133,25 @@ export function extraerJson(texto) {
  * mirando un boton en "Estimando..." para siempre, y en el gimnasio la senal
  * se corta a la mitad todo el tiempo.
  *
- * OJO CON `maxTokens`: en los modelos que razonan (toda la familia Gemini 3.x)
- * el presupuesto se gasta PRIMERO pensando, y la respuesta sale de lo que
- * sobra. Medido contra la API real: con 200 tokens, gemini-3.6-flash devuelve
- * `{"kcal": 580, "proteinG": 30,` —cortado al medio, con finish_reason
- * "length"— y el JSON no parsea. No es un error de la API ni del prompt: es el
- * presupuesto. Por eso los que llaman piden miles de tokens para respuestas de
- * veinte. En un modelo que no razona sobra y no cuesta nada, porque igual
- * frena en cuanto cierra la llave.
+ * `maxTokens` es el tamano de LA RESPUESTA, no el presupuesto total. La
+ * holgura para que el modelo piense antes la agrega esta capa, porque es lo
+ * unico que sabe con que proveedor esta hablando. Quien llama sabe cuanto mide
+ * su respuesta; no tiene por que saber si el modelo de turno razona.
  *
- * El timeout por defecto es alto por la misma razon: pensar tarda. La mediana
- * medida en el plan gratis de Gemini fue 20 segundos.
+ * Las dos mitades de esto estan medidas y las dos duelen:
+ *
+ * - Sin holgura, un modelo que razona se gasta el presupuesto pensando y la
+ *   respuesta sale cortada: gemini-3.6-flash con 200 tokens devolvia
+ *   `{"kcal": 580, "proteinG": 30,` con finish_reason "length".
+ * - Con holgura de mas, Groq la cobra igual. Reserva el max_tokens pedido
+ *   contra su cuota de 8.000 tokens POR MINUTO, asi que pedir 1.500 para una
+ *   respuesta de 22 baja el techo real a cinco llamadas por minuto. Se ve en
+ *   la cabecera `x-ratelimit-remaining-tokens`.
+ *
+ * El timeout es alto porque pensar tarda: la mediana medida en el plan gratis
+ * de Gemini fue 20 segundos.
  */
-export async function llmJson({ system, user, maxTokens = 2000, timeoutMs = 30_000 }) {
+export async function llmJson({ system, user, maxTokens = 500, timeoutMs = 30_000 }) {
   const cfg = llmConfig();
   if (!cfg) return { ok: false, motivo: 'sin API key configurada' };
 
@@ -156,7 +167,7 @@ export async function llmJson({ system, user, maxTokens = 2000, timeoutMs = 30_0
       },
       body: JSON.stringify({
         model: cfg.modelo,
-        max_tokens: maxTokens,
+        max_tokens: maxTokens + cfg.holguraPensamiento,
         // Baja a proposito: se piden datos, no prosa. Con temperatura alta el
         // mismo texto de comida da numeros distintos cada vez, y eso en un
         // diario se nota y molesta.

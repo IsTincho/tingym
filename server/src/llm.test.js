@@ -138,6 +138,28 @@ describe('llmJson', () => {
     ]);
   });
 
+  // La holgura para pensar la pone esta capa, no quien llama. Las dos mitades
+  // costaron caro: sin holgura los modelos que razonan truncan el JSON, y con
+  // holgura de mas Groq la cobra contra su cuota de 8.000 tokens POR MINUTO,
+  // porque reserva el max_tokens pedido aunque la respuesta use veinte.
+  it('a gemini le suma holgura para pensar', async () => {
+    process.env.LLM_URL = `http://127.0.0.1:${puerto}/v1/chat/completions`;
+    process.env.LLM_API_KEY = 'k';
+    process.env.LLM_PROVIDER = 'gemini';
+    proxima.cuerpo = conTexto('{"ok":1}');
+    await llmJson({ system: 's', user: 'u', maxTokens: 200 });
+    expect(ultimaPeticion.body.max_tokens).toBe(1700);
+  });
+
+  it('a groq NO le suma holgura: la reserva se la cobran igual', async () => {
+    process.env.LLM_URL = `http://127.0.0.1:${puerto}/v1/chat/completions`;
+    process.env.LLM_API_KEY = 'k';
+    process.env.LLM_PROVIDER = 'groq';
+    proxima.cuerpo = conTexto('{"ok":1}');
+    await llmJson({ system: 's', user: 'u', maxTokens: 200 });
+    expect(ultimaPeticion.body.max_tokens).toBe(200);
+  });
+
   // Los modelos abiertos obedecen el "solo JSON" menos que Claude, asi que
   // esto no es paranoia: es el caso normal.
   it('rescata el JSON envuelto en backticks', async () => {

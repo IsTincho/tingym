@@ -196,11 +196,21 @@ menos de lo razonable. Si eso molesta, el lugar para arreglarlo es el prompt de
 argentinos más comunes. No se hizo todavía: son seis muestras y no alcanza para
 calibrar.
 
-**Ojo con `max_tokens` si tocás el código.** Los modelos que razonan —toda la
-familia Gemini 3.x— gastan el presupuesto pensando y la respuesta sale de lo
-que sobra. Con 200 tokens el JSON volvía cortado al medio, con
-`finish_reason: "length"`. Por eso se piden miles para respuestas de veinte; en
-un modelo que no razona sobra y no cuesta nada, porque frena al cerrar la llave.
+**`maxTokens` es el tamaño de la respuesta, no el presupuesto total.** La
+holgura para que el modelo piense antes la agrega `llm.js` según el proveedor,
+porque es lo único que sabe con cuál está hablando. Las dos mitades están
+medidas y las dos duelen:
+
+- **Sin holgura**, un modelo que razona se gasta el presupuesto pensando y la
+  respuesta sale cortada: `gemini-3.6-flash` con 200 tokens devolvía
+  `{"kcal": 580, "proteinG": 30,` con `finish_reason: "length"`.
+- **Con holgura de más**, Groq la cobra igual. Reserva el `max_tokens` pedido
+  contra su cuota de **8.000 tokens por minuto**, así que pedir 1.500 para una
+  respuesta de 22 baja el techo real a cinco llamadas por minuto. Se ve en la
+  cabecera `x-ratelimit-remaining-tokens`.
+
+En Groq el cuello de botella es esa cuota por minuto, no los 1.000 requests
+diarios — de esos sobran.
 
 Otros modelos de Gemini que se probaron y no sirven: `gemini-3.7-flash`
 devuelve 503 "high demand" o cuelga más de 60 s; `gemini-flash-latest` apunta

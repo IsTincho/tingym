@@ -103,9 +103,9 @@ router.post('/verdict', requireAuth, rateLimit({ windowMs: 60_000, max: 20 }), a
   const { ok, data, motivo } = await llmJson({
     system: SYSTEM,
     user: userPrompt(input),
-    // Más que en comidas porque la lectura es una o dos oraciones, no un
-    // número. Y porque el presupuesto se gasta pensando primero: ver llm.js.
-    maxTokens: 2500,
+    // Más que en comidas porque la lectura es una o dos oraciones, no sólo un
+    // número. La holgura para pensar la agrega llm.js según el proveedor.
+    maxTokens: 500,
   });
   if (!ok) return res.json({ verdict: fallback, degraded: motivo });
 
