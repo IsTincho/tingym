@@ -151,13 +151,17 @@ describe('llmJson', () => {
     expect(ultimaPeticion.body.max_tokens).toBe(1700);
   });
 
-  it('a groq NO le suma holgura: la reserva se la cobran igual', async () => {
+  // A groq tambien, pero menos: gpt-oss razona (entre 230 y 395 tokens en una
+  // comida de varios items) y si se trunca el content vuelve vacio. Pero cada
+  // token de holgura de mas se reserva contra su cuota por minuto, asi que
+  // pasarse cuesta llamadas.
+  it('a groq le suma menos holgura que a gemini', async () => {
     process.env.LLM_URL = `http://127.0.0.1:${puerto}/v1/chat/completions`;
     process.env.LLM_API_KEY = 'k';
     process.env.LLM_PROVIDER = 'groq';
     proxima.cuerpo = conTexto('{"ok":1}');
     await llmJson({ system: 's', user: 'u', maxTokens: 200 });
-    expect(ultimaPeticion.body.max_tokens).toBe(200);
+    expect(ultimaPeticion.body.max_tokens).toBe(800);
   });
 
   // Los modelos abiertos obedecen el "solo JSON" menos que Claude, asi que

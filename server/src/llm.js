@@ -38,8 +38,17 @@ const PROVEEDORES = {
     // NO usar qwen/qwen3.6-27b: filtra bloques <think> dentro del content y
     // el JSON no parsea nunca. Probado, 0 de 10.
     modelo: 'openai/gpt-oss-120b',
-    // No razona antes de contestar, asi que no hace falta presupuesto extra.
-    holguraPensamiento: 0,
+    // gpt-oss TAMBIEN razona: los tokens de razonamiento cuentan en
+    // completion_tokens pero NO aparecen en content, asi que al truncarse el
+    // content vuelve vacio —"" — y el JSON no parsea. Medido: una comida de
+    // varios items ("asado: dos chorizos, morcilla y tira de asado") gasta
+    // entre 230 y 395 tokens razonando. Con 200 fallaban las tres que probe;
+    // con 800 pasan.
+    //
+    // 600 y no 1500 como Gemini porque Groq reserva el max_tokens pedido
+    // contra su cuota de 8.000 tokens por minuto: cada token de holgura de mas
+    // es una llamada menos por minuto.
+    holguraPensamiento: 600,
   },
   gemini: {
     url: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',
