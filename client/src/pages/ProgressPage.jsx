@@ -4,7 +4,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { aggregateSessions, detectPlateau, totalVolume } from '@gym/shared';
 import { listExercises } from '../db/repo.js';
 import { listDoneSessions } from '../db/sessionRepo.js';
-import { Card, EmptyState } from '../ui/primitives.jsx';
+import { Card, EmptyState, PageTitle, SectionLabel } from '../ui/primitives.jsx';
 import { monthLabel, relativeDate, shortDate, weekLabel, kg } from '../lib/format.js';
 
 const PERIODS = [
@@ -77,16 +77,17 @@ export default function ProgressPage() {
     <div>
       <Header />
 
-      <div className="px-4 flex gap-2 pb-3">
+      <div className="px-4 flex gap-2 pb-4">
         {PERIODS.map((p) => (
           <button
             key={p.key}
             onClick={() => setPeriod(p.key)}
             className={
-              'flex-1 min-h-11 rounded-xl border font-semibold ' +
+              'flex-1 min-h-12 chamfer-sm border label-hud text-[11px] ' +
+              'transition-[background-color,box-shadow,border-color] ' +
               (period === p.key
-                ? 'bg-accent text-ink border-accent'
-                : 'bg-surface text-muted border-line')
+                ? 'bg-accent text-ink border-accent glow-red'
+                : 'bg-surface text-muted border-line active:border-accent/40')
             }
           >
             {p.label}
@@ -99,31 +100,38 @@ export default function ProgressPage() {
           {buckets.slice(0, 12).map((b) => (
             <li key={b.key}>
               <Card className="p-4">
-                <div className="flex items-baseline justify-between">
-                  <p className="font-semibold">{label(b.from)}</p>
-                  <p className="text-sm text-muted">
-                    {b.sessions} {b.sessions === 1 ? 'sesión' : 'sesiones'}
+                <div className="flex items-baseline justify-between gap-3">
+                  <p className="font-display font-bold uppercase tracking-[0.08em] truncate">
+                    {label(b.from)}
+                  </p>
+                  <p className="label-hud text-[10px] text-muted shrink-0">
+                    <span className="num text-accent">{b.sessions}</span>{' '}
+                    {b.sessions === 1 ? 'sesión' : 'sesiones'}
                   </p>
                 </div>
-                <div className="flex gap-4 mt-2 text-sm">
+                <div className="flex gap-4 mt-3 text-sm">
                   <span>
-                    <span className="text-muted">volumen </span>
-                    <span className="font-semibold">{kg(Math.round(b.volumeKg))} kg</span>
+                    <span className="label-hud text-[9px] text-muted block">volumen</span>
+                    <span className="num font-bold text-accent text-glow-red">
+                      {kg(Math.round(b.volumeKg))}
+                    </span>
+                    <span className="text-muted text-xs"> kg</span>
                   </span>
                   <span>
-                    <span className="text-muted">series </span>
-                    <span className="font-semibold">{b.sets}</span>
+                    <span className="label-hud text-[9px] text-muted block">series</span>
+                    <span className="num font-bold">{b.sets}</span>
                   </span>
                   <span>
-                    <span className="text-muted">ejercicios </span>
-                    <span className="font-semibold">{b.exercises}</span>
+                    <span className="label-hud text-[9px] text-muted block">ejercicios</span>
+                    <span className="num font-bold">{b.exercises}</span>
                   </span>
                 </div>
                 {/* Barra proporcional al bucket mas alto. Es una regla de
                     referencia, no un grafico: el anti-alcance descarta charts. */}
-                <div className="mt-3 h-1.5 rounded-full bg-surface-2 overflow-hidden">
+                <div className="mt-3.5 h-2 bg-surface-2 border border-line overflow-hidden">
                   <div
-                    className="h-full bg-accent"
+                    className="h-full bg-gradient-to-r from-accent to-accent-3
+                               shadow-[0_0_12px_0_rgba(255,42,74,0.75)]"
                     style={{
                       width: `${Math.round(
                         (b.volumeKg / Math.max(...buckets.map((x) => x.volumeKg), 1)) * 100,
@@ -137,26 +145,33 @@ export default function ProgressPage() {
         </ul>
 
         <section className="pt-2">
-          <h2 className="text-sm font-semibold text-muted uppercase tracking-wide mb-2">
-            Por ejercicio
-          </h2>
+          <SectionLabel>Por ejercicio</SectionLabel>
           <ul className="space-y-2">
             {porEjercicio.map((i) => (
               <li key={i.exerciseId}>
                 <Link to={`/progreso/${i.exerciseId}`}>
-                  <Card className="p-4 flex items-center justify-between gap-3">
+                  <Card
+                    tone={i.plateau ? 'red' : 'cyan'}
+                    className="p-4 flex items-center justify-between gap-3
+                               active:border-accent/40 transition-colors"
+                  >
                     <div className="min-w-0">
                       <p className="font-semibold truncate">
                         {byId.get(i.exerciseId)?.name ?? 'Ejercicio'}
                       </p>
-                      <p className="text-sm text-muted">
-                        {i.sessions} {i.sessions === 1 ? 'sesión' : 'sesiones'} ·{' '}
-                        {relativeDate(i.lastDate)}
-                        {i.plateau && <span className="text-amber-300"> · planchado</span>}
+                      <p className="text-sm text-muted mt-0.5">
+                        <span className="num">{i.sessions}</span>{' '}
+                        {i.sessions === 1 ? 'sesión' : 'sesiones'} · {relativeDate(i.lastDate)}
+                        {i.plateau && (
+                          <span className="label-hud text-[9px] text-warn ml-2">planchado</span>
+                        )}
                       </p>
                     </div>
-                    <span className="shrink-0 font-semibold">
-                      {i.lastTop != null ? `${kg(i.lastTop)} kg` : '—'}
+                    <span className="shrink-0 num font-bold text-lg text-glow-red text-accent">
+                      {i.lastTop != null ? `${kg(i.lastTop)}` : '—'}
+                      {i.lastTop != null && (
+                        <span className="text-muted text-xs font-normal"> kg</span>
+                      )}
                     </span>
                   </Card>
                 </Link>
@@ -171,8 +186,9 @@ export default function ProgressPage() {
 
 function Header() {
   return (
-    <header className="px-4 pt-[max(1rem,env(safe-area-inset-top))] pb-3">
-      <h1 className="text-2xl font-bold">Progreso</h1>
+    <header className="px-4 pt-[max(1rem,env(safe-area-inset-top))] pb-4">
+      <PageTitle>Progreso</PageTitle>
+      <p className="label-hud text-[10px] text-muted/70 mt-1">volumen · series · tope</p>
     </header>
   );
 }

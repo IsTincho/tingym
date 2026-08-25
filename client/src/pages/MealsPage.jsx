@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { MEAL_SLOTS, MEAL_SLOT_LABELS } from '@gym/shared';
 import { deleteMeal, listMeals, logMeal } from '../db/trackingRepo.js';
-import { Button, Card, EmptyState, Field, Input, Select } from '../ui/primitives.jsx';
+import { Button, Card, EmptyState, Field, Input, PageTitle, Select } from '../ui/primitives.jsx';
 import Sheet from '../ui/Sheet.jsx';
 import { relativeDate, startOfDay } from '../lib/format.js';
 
@@ -56,8 +56,8 @@ export default function MealsPage() {
   return (
     <div>
       <header className="px-4 pt-[max(1rem,env(safe-area-inset-top))] pb-3 flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Comidas</h1>
-        <Button onClick={abrir}>Anotar</Button>
+        <PageTitle>Comidas</PageTitle>
+        <Button onClick={abrir}>+ Anotar</Button>
       </header>
 
       {dias.length === 0 ? (
@@ -70,12 +70,13 @@ export default function MealsPage() {
         <div className="px-4 space-y-4">
           {dias.map((d) => (
             <section key={d.key}>
-              <div className="flex items-baseline justify-between mb-2">
-                <h2 className="text-sm font-semibold text-muted uppercase tracking-wide">
+              <div className="flex items-baseline justify-between gap-3 mb-2.5
+                              border-b border-line pb-1.5">
+                <h2 className="label-hud text-[11px] text-accent text-glow-red">
                   {relativeDate(d.key)}
                 </h2>
                 {(d.kcal != null || d.proteinG != null) && (
-                  <p className="text-xs text-muted">
+                  <p className="num text-[11px] text-muted shrink-0">
                     {d.kcal != null ? `${d.kcal} kcal` : ''}
                     {d.kcal != null && d.proteinG != null ? ' · ' : ''}
                     {d.proteinG != null ? `${Math.round(d.proteinG)} g prot` : ''}
@@ -85,14 +86,14 @@ export default function MealsPage() {
               <ul className="space-y-2">
                 {d.items.map((m) => (
                   <li key={m._id}>
-                    <Card className="p-3 flex items-start justify-between gap-3">
+                    <Card tone="cyan" className="p-3.5 flex items-start justify-between gap-3">
                       <div className="min-w-0">
-                        <p className="text-xs text-muted uppercase tracking-wide">
+                        <p className="label-hud text-[9px] text-accent-2/80">
                           {MEAL_SLOT_LABELS[m.slot]}
                         </p>
-                        <p className="font-semibold">{m.description}</p>
+                        <p className="font-semibold mt-1">{m.description}</p>
                         {(m.kcal != null || m.proteinG != null) && (
-                          <p className="text-sm text-muted mt-0.5">
+                          <p className="num text-sm text-muted mt-1">
                             {m.kcal != null ? `${m.kcal} kcal` : ''}
                             {m.kcal != null && m.proteinG != null ? ' · ' : ''}
                             {m.proteinG != null ? `${m.proteinG} g prot` : ''}
@@ -100,7 +101,7 @@ export default function MealsPage() {
                         )}
                       </div>
                       <button
-                        className="text-muted text-sm px-2 min-h-11 shrink-0"
+                        className="text-muted text-sm px-2 min-h-11 shrink-0 active:text-danger"
                         onClick={() => deleteMeal(m._id)}
                         aria-label="Borrar comida"
                       >

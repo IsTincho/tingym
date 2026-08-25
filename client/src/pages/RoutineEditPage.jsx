@@ -49,11 +49,14 @@ export default function RoutineEditPage() {
   return (
     <div>
       <header className="px-4 pt-[max(1rem,env(safe-area-inset-top))] pb-3">
-        <Link to="/rutinas" className="text-muted text-sm">
+        <Link to="/rutinas" className="label-hud text-[10px] text-muted active:text-accent">
           ← Rutinas
         </Link>
+        {/* El nombre se edita en el lugar: no hay pantalla de "editar rutina". */}
         <input
-          className="mt-2 w-full bg-transparent text-2xl font-bold outline-none"
+          className="mt-2 w-full bg-transparent font-display font-bold text-2xl uppercase
+                     tracking-[0.06em] text-glow-red outline-none border-b border-transparent
+                     transition-colors focus:border-accent/60"
           value={routine.name}
           onChange={(e) => updateRoutine(routine._id, { name: e.target.value })}
           aria-label="Nombre de la rutina"
@@ -66,10 +69,11 @@ export default function RoutineEditPage() {
             key={d.key}
             onClick={() => setOpenDay(d.key)}
             className={
-              'shrink-0 min-h-11 px-4 rounded-xl border font-semibold ' +
+              'shrink-0 min-h-12 px-4 chamfer-sm border label-hud text-[11px] ' +
+              'transition-[background-color,box-shadow,border-color] ' +
               (d.key === currentDay
-                ? 'bg-accent text-ink border-accent'
-                : 'bg-surface text-muted border-line')
+                ? 'bg-accent text-ink border-accent glow-red'
+                : 'bg-surface text-muted border-line active:border-accent/40')
             }
           >
             {d.key} · {d.label}
@@ -95,8 +99,8 @@ export default function RoutineEditPage() {
       ) : day ? (
         <div className="px-4 space-y-3">
           {day.slots.length === 0 && (
-            <p className="text-muted text-sm py-6 text-center">
-              Este día no tiene ejercicios.
+            <p className="label-hud text-[11px] text-muted/70 py-8 text-center">
+              // este día no tiene ejercicios
             </p>
           )}
 
@@ -106,16 +110,23 @@ export default function RoutineEditPage() {
               <Card key={`${slot.exerciseId}-${i}`} className="p-4">
                 <div className="flex items-start justify-between gap-3">
                   <button
-                    className="text-left flex-1"
+                    className="text-left flex-1 min-w-0"
                     onClick={() => setSheet({ type: 'slot', dayKey: day.key, index: i })}
                   >
-                    <p className="font-semibold">{ex?.name ?? 'Ejercicio borrado'}</p>
-                    <p className="text-sm text-muted mt-0.5">
+                    <p className="font-semibold flex items-baseline gap-2">
+                      <span className="num text-[11px] text-accent/60 shrink-0">
+                        {String(i + 1).padStart(2, '0')}
+                      </span>
+                      <span className="truncate">{ex?.name ?? 'Ejercicio borrado'}</span>
+                    </p>
+                    <p className="num text-sm text-muted mt-1">
                       {slot.targetSets} × {slot.repRangeMin}-{slot.repRangeMax} ·{' '}
                       {restLabel(slot.restSeconds)} descanso
                     </p>
                     {slot.note && (
-                      <p className="text-sm text-muted mt-1 italic">{slot.note}</p>
+                      <p className="text-sm text-muted mt-1.5 border-l-2 border-accent-3/50 pl-2.5">
+                        {slot.note}
+                      </p>
                     )}
                   </button>
                   <div className="flex flex-col gap-1">
@@ -255,7 +266,8 @@ function PickerSheet({ sheet, routineId, exercises, onClose }) {
         {filtered.map((ex) => (
           <li key={ex._id}>
             <button
-              className="w-full text-left p-3 min-h-14 rounded-xl bg-surface-2 border border-line"
+              className="w-full text-left p-3.5 min-h-14 chamfer-sm bg-surface-2 border border-line
+                         active:border-accent/60 active:glow-red-soft transition-[border-color,box-shadow]"
               onClick={async () => {
                 await addSlot(routineId, sheet.dayKey, { exerciseId: ex._id });
                 onClose();
@@ -269,7 +281,7 @@ function PickerSheet({ sheet, routineId, exercises, onClose }) {
           </li>
         ))}
         {filtered.length === 0 && (
-          <li className="text-muted text-sm py-6 text-center">
+          <li className="label-hud text-[11px] text-muted/70 py-8 text-center">
             Nada con ese nombre. Creálo en la pestaña Ejercicios.
           </li>
         )}

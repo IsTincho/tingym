@@ -16,7 +16,7 @@ import {
   substituteEntry,
 } from '../db/sessionRepo.js';
 import { isCoachEnabled, requestVerdict } from '../db/sync.js';
-import { Button, Card, EmptyState, Field, Input } from '../ui/primitives.jsx';
+import { Button, Card, EmptyState, Field, Input, PageTitle } from '../ui/primitives.jsx';
 import Sheet from '../ui/Sheet.jsx';
 import VerdictChip from '../ui/VerdictChip.jsx';
 import { relativeDate, restLabel, setLabel, setsLabel, kg } from '../lib/format.js';
@@ -43,22 +43,34 @@ export default function SessionPage() {
 
   return (
     <div>
-      <header className="px-4 pt-[max(1rem,env(safe-area-inset-top))] pb-3 sticky top-0 bg-ink/95 backdrop-blur z-10">
-        <div className="flex items-baseline justify-between">
-          <h1 className="text-2xl font-bold">
+      <header className="px-4 pt-[max(1rem,env(safe-area-inset-top))] pb-3 sticky top-0
+                         bg-ink/95 backdrop-blur-md z-10 border-b border-accent/20">
+        <div className="flex items-baseline justify-between gap-3">
+          <PageTitle className="text-2xl">
             {session.dayKey ? `${session.dayKey} · ` : ''}Sesión
-          </h1>
-          <span className="text-sm text-muted">
-            {hechas}/{session.entries.length}
+          </PageTitle>
+          <span className="num text-sm shrink-0">
+            <span className="text-accent text-glow-red font-bold">{hechas}</span>
+            <span className="text-muted">/{session.entries.length}</span>
           </span>
         </div>
-        <p className="text-sm text-muted">{relativeDate(session.date)}</p>
+        <p className="label-hud text-[10px] text-muted/70 mt-1">{relativeDate(session.date)}</p>
+        {/* Avance de la sesion: la unica metrica que importa mientras entrenas. */}
+        <div className="mt-2.5 h-[3px] bg-surface-2 overflow-hidden">
+          <div
+            className="h-full bg-gradient-to-r from-accent to-accent-3 transition-[width] duration-500
+                       shadow-[0_0_10px_0_rgba(255,42,74,0.9)]"
+            style={{
+              width: `${session.entries.length ? Math.round((hechas / session.entries.length) * 100) : 0}%`,
+            }}
+          />
+        </div>
       </header>
 
       <div className="px-4 space-y-3">
         {session.entries.length === 0 && (
-          <p className="text-muted text-sm py-6 text-center">
-            Sesión libre: agregá el primer ejercicio.
+          <p className="label-hud text-[11px] text-muted/70 py-8 text-center">
+            // sesión libre: agregá el primer ejercicio
           </p>
         )}
 
@@ -86,7 +98,7 @@ export default function SessionPage() {
         </Button>
 
         <Button
-          className="w-full"
+          className="w-full min-h-16 text-base"
           onClick={async () => {
             if (hechas === 0) {
               if (!confirm('No registraste ninguna serie. ¿Terminar igual?')) return;
@@ -95,7 +107,7 @@ export default function SessionPage() {
             navigate('/hoy', { replace: true });
           }}
         >
-          Terminar entrenamiento
+          ■ Terminar entrenamiento
         </Button>
       </div>
 
@@ -153,28 +165,40 @@ function EntryCard({
       : null;
 
   return (
-    <Card className={expanded ? 'border-accent/40' : ''}>
+    <Card
+      tone={hechas.length > 0 ? 'red' : 'none'}
+      className={expanded ? 'border-accent/45 glow-red-soft' : ''}
+    >
       <button className="w-full text-left p-4" onClick={onToggle}>
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <p className="font-semibold">{exercise?.name ?? 'Ejercicio'}</p>
+            <p className="font-semibold flex items-baseline gap-2">
+              <span className="num text-[11px] text-accent/60 shrink-0">
+                {String(index + 1).padStart(2, '0')}
+              </span>
+              <span className="truncate">{exercise?.name ?? 'Ejercicio'}</span>
+            </p>
             {replaced && (
-              <p className="text-xs text-muted mt-0.5">en lugar de {replaced.name}</p>
+              <p className="label-hud text-[9px] text-accent-3 mt-1">
+                ↺ en lugar de {replaced.name}
+              </p>
             )}
-            <p className="text-sm text-muted mt-0.5">
+            <p className="text-sm text-muted mt-1 num">
               {entry.target
                 ? `${entry.target.targetSets} × ${entry.target.repRangeMin}-${entry.target.repRangeMax} · ${restLabel(entry.target.restSeconds)}`
                 : 'sin objetivo'}
             </p>
           </div>
-          <span className="shrink-0 text-sm font-semibold text-muted">
-            {hechas.length}
-            {entry.target ? `/${entry.target.targetSets}` : ''}
+          <span className="shrink-0 num text-sm font-bold">
+            <span className={hechas.length > 0 ? 'text-accent text-glow-red' : 'text-muted'}>
+              {hechas.length}
+            </span>
+            {entry.target ? <span className="text-muted">/{entry.target.targetSets}</span> : ''}
           </span>
         </div>
 
         {hechas.length > 0 && (
-          <p className="text-sm mt-2 text-text/90">{setsLabel(hechas)}</p>
+          <p className="text-sm mt-2.5 num text-text/85">{setsLabel(hechas)}</p>
         )}
         {!expanded && verdictHoy && (
           <div className="mt-2">
@@ -186,7 +210,9 @@ function EntryCard({
       {expanded && (
         <div className="px-4 pb-4 space-y-3 border-t border-line pt-3">
           {entry.target?.note && (
-            <p className="text-sm text-muted italic">{entry.target.note}</p>
+            <p className="text-sm text-muted border-l-2 border-accent-3/50 pl-3">
+              {entry.target.note}
+            </p>
           )}
 
           {/* El bloque que hace que la app sirva: que hiciste la ultima vez. */}
@@ -205,16 +231,21 @@ function EntryCard({
               {entry.sets.map((s, i) => (
                 <li
                   key={i}
-                  className="flex items-center justify-between bg-surface-2 rounded-xl px-3 py-2"
+                  className="flex items-center justify-between bg-surface-2 chamfer-sm px-3 py-2.5
+                             border-l-2 border-accent/40"
                 >
-                  <span className="text-sm">
-                    <span className="text-muted mr-2">{i + 1}.</span>
+                  <span className="text-sm num">
+                    <span className="text-accent/60 mr-2.5">
+                      {String(i + 1).padStart(2, '0')}
+                    </span>
                     {setLabel(s)}
-                    {s.failed && <span className="text-danger ml-2">fallo</span>}
+                    {s.failed && (
+                      <span className="label-hud text-[9px] text-danger ml-2">fallo</span>
+                    )}
                     {s.note && <span className="text-muted ml-2 italic">{s.note}</span>}
                   </span>
                   <button
-                    className="text-muted text-sm px-2 min-h-9"
+                    className="text-muted text-sm px-2 min-h-9 active:text-danger"
                     onClick={() => removeSet(sessionId, index, i)}
                     aria-label={`Borrar serie ${i + 1}`}
                   >
@@ -313,15 +344,15 @@ function AnalyzeButton({ sessionId, entryIndex, entry, exercise, fallback }) {
   return (
     <div>
       <Button
-        variant="secondary"
+        variant="cyan"
         className="w-full"
         onClick={analizar}
         disabled={estado === 'cargando'}
       >
-        {estado === 'cargando' ? 'Analizando…' : 'Analizar con IA'}
+        {estado === 'cargando' ? '⋯ Analizando' : '⌁ Analizar con IA'}
       </Button>
       {estado === 'error' && (
-        <p className="text-sm text-muted mt-1 text-center">
+        <p className="text-sm text-muted mt-2 text-center">
           Sin conexión o sin cuenta: te queda la lectura de la regla local.
         </p>
       )}
@@ -333,17 +364,17 @@ function LastTime({ briefing }) {
   if (!briefing) return null;
   if (!briefing.last) {
     return (
-      <p className="text-sm text-muted">
+      <p className="text-sm text-muted border-l-2 border-line pl-3">
         Primera vez que registrás este ejercicio. Elegí un peso y arrancá.
       </p>
     );
   }
   return (
-    <div className="bg-surface-2 rounded-xl p-3">
-      <p className="text-xs text-muted uppercase tracking-wide">
+    <div className="bg-surface-2 chamfer-sm p-3.5 border-l-2 border-accent-2/60">
+      <p className="label-hud text-[10px] text-accent-2 text-glow-cyan">
         Última vez · {relativeDate(briefing.last.date)}
       </p>
-      <p className="text-sm mt-1">{setsLabel(briefing.last.sets)}</p>
+      <p className="text-sm mt-1.5 num text-text/90">{setsLabel(briefing.last.sets)}</p>
       {briefing.verdict && (
         <div className="mt-2">
           <VerdictChip verdict={briefing.verdict} compact />
@@ -395,10 +426,10 @@ function SetLogger({ sessionId, entryIndex, entry, exercise, openingWeight }) {
       <div className="flex gap-2">
         {!sinCarga && (
           <div className="flex-1">
-            <span className="block text-xs text-muted mb-1">Peso (kg)</span>
+            <span className="block label-hud text-[10px] text-muted mb-1.5">Peso (kg)</span>
             <div className="flex items-stretch gap-1">
               <button
-                className="min-w-12 min-h-12 rounded-xl bg-surface-2 border border-line text-xl"
+                className="min-w-12 min-h-12 chamfer-sm bg-surface-2 border border-line text-xl font-display\n                           text-accent active:bg-accent active:text-ink transition-colors"
                 onClick={() => bump(-step)}
                 aria-label="Bajar peso"
               >
@@ -410,10 +441,10 @@ function SetLogger({ sessionId, entryIndex, entry, exercise, openingWeight }) {
                 step={step}
                 value={weight ?? ''}
                 onChange={(e) => setWeight(e.target.value === '' ? '' : Number(e.target.value))}
-                className="w-full min-h-12 text-center rounded-xl bg-surface-2 border border-line text-lg font-semibold outline-none focus:border-accent"
+                className="w-full min-h-12 text-center chamfer-sm bg-surface-2 border border-line num text-xl\n                         font-bold outline-none transition-[border-color,box-shadow]\n                         focus:border-accent focus:glow-red-soft"
               />
               <button
-                className="min-w-12 min-h-12 rounded-xl bg-surface-2 border border-line text-xl"
+                className="min-w-12 min-h-12 chamfer-sm bg-surface-2 border border-line text-xl font-display\n                           text-accent active:bg-accent active:text-ink transition-colors"
                 onClick={() => bump(step)}
                 aria-label="Subir peso"
               >
@@ -423,13 +454,13 @@ function SetLogger({ sessionId, entryIndex, entry, exercise, openingWeight }) {
           </div>
         )}
 
-        <div className={sinCarga ? 'flex-1' : 'w-[38%]'}>
-          <span className="block text-xs text-muted mb-1">
+        <div className={sinCarga ? 'flex-1' : 'w-[46%]'}>
+          <span className="block label-hud text-[10px] text-muted mb-1.5">
             {exercise?.loadType === 'time' ? 'Segundos' : 'Reps'}
           </span>
           <div className="flex items-stretch gap-1">
             <button
-              className="min-w-12 min-h-12 rounded-xl bg-surface-2 border border-line text-xl"
+              className="min-w-11 min-h-12 chamfer-sm bg-surface-2 border border-line text-xl font-display\n                           text-accent active:bg-accent active:text-ink transition-colors"
               onClick={() => setReps((r) => Math.max(0, Number(r || 0) - 1))}
               aria-label="Menos reps"
             >
@@ -440,10 +471,10 @@ function SetLogger({ sessionId, entryIndex, entry, exercise, openingWeight }) {
               inputMode="numeric"
               value={reps ?? ''}
               onChange={(e) => setReps(e.target.value === '' ? '' : Number(e.target.value))}
-              className="w-full min-h-12 text-center rounded-xl bg-surface-2 border border-line text-lg font-semibold outline-none focus:border-accent"
+              className="w-full min-h-12 text-center chamfer-sm bg-surface-2 border border-line num text-xl\n                         font-bold outline-none transition-[border-color,box-shadow]\n                         focus:border-accent focus:glow-red-soft"
             />
             <button
-              className="min-w-12 min-h-12 rounded-xl bg-surface-2 border border-line text-xl"
+              className="min-w-11 min-h-12 chamfer-sm bg-surface-2 border border-line text-xl font-display\n                           text-accent active:bg-accent active:text-ink transition-colors"
               onClick={() => setReps((r) => Number(r || 0) + 1)}
               aria-label="Más reps"
             >
@@ -462,9 +493,10 @@ function SetLogger({ sessionId, entryIndex, entry, exercise, openingWeight }) {
           onClick={() => setFailed((f) => !f)}
           aria-pressed={failed}
           className={
-            'min-h-14 px-4 rounded-xl border font-semibold ' +
+            'min-h-14 px-4 chamfer-sm border label-hud text-[11px] ' +
+            'transition-[background-color,box-shadow,color] ' +
             (failed
-              ? 'bg-danger/20 text-danger border-danger/40'
+              ? 'bg-danger/20 text-danger border-danger/60 glow-red-soft'
               : 'bg-surface-2 text-muted border-line')
           }
         >
@@ -490,11 +522,12 @@ function PickerSheet({ open, title, exercises, onClose, onPick }) {
         {filtered.map((ex) => (
           <li key={ex._id}>
             <button
-              className="w-full text-left p-3 min-h-14 rounded-xl bg-surface-2 border border-line"
+              className="w-full text-left p-3.5 min-h-14 chamfer-sm bg-surface-2 border border-line
+                         active:border-accent/60 active:glow-red-soft transition-[border-color,box-shadow]"
               onClick={() => onPick(ex)}
             >
               <span className="font-semibold">{ex.name}</span>
-              <span className="block text-sm text-muted">
+              <span className="block label-hud text-[9px] text-muted mt-1">
                 {MUSCLE_GROUP_LABELS[ex.muscleGroup]}
               </span>
             </button>

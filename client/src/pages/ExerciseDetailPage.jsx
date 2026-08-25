@@ -3,7 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 import { deterministicVerdict, detectPlateau, exerciseSeries } from '@gym/shared';
 import { getExercise } from '../db/repo.js';
 import { exerciseHistory } from '../db/sessionRepo.js';
-import { Card, EmptyState } from '../ui/primitives.jsx';
+import { Card, EmptyState, PageTitle, SectionLabel } from '../ui/primitives.jsx';
 import VerdictChip from '../ui/VerdictChip.jsx';
 import { relativeDate, setsLabel, shortDate, kg } from '../lib/format.js';
 
@@ -49,11 +49,15 @@ export default function ExerciseDetailPage() {
   return (
     <div>
       <header className="px-4 pt-[max(1rem,env(safe-area-inset-top))] pb-3">
-        <Link to="/progreso" className="text-muted text-sm">
+        <Link to="/progreso" className="label-hud text-[10px] text-muted active:text-accent">
           ← Progreso
         </Link>
-        <h1 className="text-2xl font-bold mt-2">{exercise?.name ?? 'Ejercicio'}</h1>
-        {exercise?.notes && <p className="text-sm text-muted mt-1">{exercise.notes}</p>}
+        <PageTitle className="mt-2 text-xl">{exercise?.name ?? 'Ejercicio'}</PageTitle>
+        {exercise?.notes && (
+          <p className="text-sm text-muted mt-2 border-l-2 border-accent-3/50 pl-3">
+            {exercise.notes}
+          </p>
+        )}
       </header>
 
       {history.length === 0 ? (
@@ -75,28 +79,27 @@ export default function ExerciseDetailPage() {
 
           {verdict && (
             <div>
-              <h2 className="text-sm font-semibold text-muted uppercase tracking-wide mb-2">
-                Según la última vez
-              </h2>
+              <SectionLabel>Según la última vez</SectionLabel>
               <VerdictChip verdict={verdict} />
             </div>
           )}
 
           <section>
-            <h2 className="text-sm font-semibold text-muted uppercase tracking-wide mb-2">
-              Peso tope por sesión
-            </h2>
+            <SectionLabel>Peso tope por sesión</SectionLabel>
             <Card className="p-4 space-y-2">
               {serie.slice(0, 12).map((s) => (
                 <div key={s.date} className="flex items-center gap-3">
-                  <span className="text-xs text-muted w-16 shrink-0">{shortDate(s.date)}</span>
-                  <div className="flex-1 h-2 rounded-full bg-surface-2 overflow-hidden">
+                  <span className="num text-[10px] text-muted w-14 shrink-0">
+                    {shortDate(s.date)}
+                  </span>
+                  <div className="flex-1 h-2 bg-surface-2 border border-line overflow-hidden">
                     <div
-                      className="h-full bg-accent"
+                      className="h-full bg-gradient-to-r from-accent to-accent-3
+                                 shadow-[0_0_10px_0_rgba(255,42,74,0.75)]"
                       style={{ width: `${((s.topWeightKg ?? 0) / maxTop) * 100}%` }}
                     />
                   </div>
-                  <span className="text-sm font-semibold w-20 text-right shrink-0">
+                  <span className="num text-sm font-bold w-20 text-right shrink-0">
                     {s.topWeightKg != null ? `${kg(s.topWeightKg)} kg` : `${s.totalReps} reps`}
                   </span>
                 </div>
@@ -105,22 +108,20 @@ export default function ExerciseDetailPage() {
           </section>
 
           <section>
-            <h2 className="text-sm font-semibold text-muted uppercase tracking-wide mb-2">
-              Historial
-            </h2>
+            <SectionLabel>Historial</SectionLabel>
             <ul className="space-y-2">
               {history.map((h) => (
                 <li key={h.sessionId}>
-                  <Card className="p-4">
-                    <div className="flex items-baseline justify-between">
-                      <p className="font-semibold">{relativeDate(h.date)}</p>
+                  <Card tone="cyan" className="p-4">
+                    <div className="flex items-baseline justify-between gap-3">
+                      <p className="label-hud text-[10px] text-accent-2">{relativeDate(h.date)}</p>
                       {h.target && (
-                        <p className="text-xs text-muted">
+                        <p className="num text-[10px] text-muted shrink-0">
                           objetivo {h.target.repRangeMin}-{h.target.repRangeMax}
                         </p>
                       )}
                     </div>
-                    <p className="text-sm mt-1">{setsLabel(h.sets)}</p>
+                    <p className="text-sm mt-2 num text-text/90">{setsLabel(h.sets)}</p>
                   </Card>
                 </li>
               ))}
@@ -134,11 +135,15 @@ export default function ExerciseDetailPage() {
 
 function Stat({ label, value, tone }) {
   const color =
-    tone === 'warn' ? 'text-amber-300' : tone === 'ok' ? 'text-emerald-300' : 'text-text';
+    tone === 'warn'
+      ? 'text-warn'
+      : tone === 'ok'
+        ? 'text-ok'
+        : 'text-accent text-glow-red';
   return (
     <Card className="p-3 text-center">
-      <p className="text-xs text-muted">{label}</p>
-      <p className={`font-bold mt-0.5 ${color}`}>{value}</p>
+      <p className="label-hud text-[9px] text-muted">{label}</p>
+      <p className={`num font-bold mt-1.5 ${color}`}>{value}</p>
     </Card>
   );
 }

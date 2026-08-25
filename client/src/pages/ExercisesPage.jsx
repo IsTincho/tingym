@@ -9,7 +9,7 @@ import {
   PATTERNS,
 } from '@gym/shared';
 import { createExercise, deleteExercise, listExercises } from '../db/repo.js';
-import { Button, Card, Field, Input, Select } from '../ui/primitives.jsx';
+import { Button, Card, Field, Input, PageTitle, SectionLabel, Select } from '../ui/primitives.jsx';
 import Sheet from '../ui/Sheet.jsx';
 
 const EMPTY = {
@@ -56,12 +56,12 @@ export default function ExercisesPage() {
     <div>
       <header className="px-4 pt-[max(1rem,env(safe-area-inset-top))] pb-3 flex items-center justify-between">
         <div>
-          <Link to="/rutinas" className="text-muted text-sm">
+          <Link to="/rutinas" className="label-hud text-[10px] text-muted active:text-accent">
             ← Rutinas
           </Link>
-          <h1 className="text-2xl font-bold">Ejercicios</h1>
+          <PageTitle className="mt-1">Ejercicios</PageTitle>
         </div>
-        <Button onClick={() => setCreating(true)}>Nuevo</Button>
+        <Button onClick={() => setCreating(true)}>+ Nuevo</Button>
       </header>
 
       <div className="px-4 pb-3">
@@ -71,17 +71,20 @@ export default function ExercisesPage() {
       <div className="px-4 space-y-5">
         {groups.map((g) => (
           <section key={g.key}>
-            <h2 className="text-sm font-semibold text-muted uppercase tracking-wide mb-2">
-              {MUSCLE_GROUP_LABELS[g.key]}
-            </h2>
+            <SectionLabel>{MUSCLE_GROUP_LABELS[g.key]}</SectionLabel>
             <ul className="space-y-2">
               {g.items.map((ex) => (
                 <li key={ex._id}>
-                  <Card className="p-3 flex items-center justify-between gap-3">
+                  <Card
+                    tone={ex.ownerId ? 'red' : 'none'}
+                    className="p-3.5 flex items-center justify-between gap-3"
+                  >
                     <div className="min-w-0">
                       <p className="font-semibold truncate">{ex.name}</p>
-                      <p className="text-sm text-muted">
-                        {LOAD_TYPE_LABELS[ex.loadType]}
+                      <p className="text-sm text-muted mt-0.5">
+                        <span className="label-hud text-[9px] text-accent-2/70">
+                          {LOAD_TYPE_LABELS[ex.loadType]}
+                        </span>
                         {ex.notes ? ` · ${ex.notes}` : ''}
                       </p>
                     </div>
@@ -89,7 +92,7 @@ export default function ExercisesPage() {
                     {ex.ownerId && (
                       <Button
                         variant="ghost"
-                        className="shrink-0 px-3"
+                        className="shrink-0 px-3 active:text-danger"
                         onClick={() => {
                           if (confirm(`¿Borrar "${ex.name}"?`)) deleteExercise(ex._id);
                         }}
@@ -104,7 +107,9 @@ export default function ExercisesPage() {
           </section>
         ))}
         {groups.length === 0 && (
-          <p className="text-muted text-sm py-6 text-center">Nada con ese nombre.</p>
+          <p className="label-hud text-[11px] text-muted/70 py-8 text-center">
+            // nada con ese nombre
+          </p>
         )}
       </div>
 

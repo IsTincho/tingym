@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { getMeta } from '../db/db.js';
 import { changePassword, clearSession, getToken, login, register, sync } from '../db/sync.js';
-import { Button, Card, Field, Input } from '../ui/primitives.jsx';
+import { Button, Card, Field, Input, PageTitle } from '../ui/primitives.jsx';
 import { relativeDate } from '../lib/format.js';
 
 function PasswordForm() {
@@ -113,19 +113,22 @@ export default function AccountPage() {
   return (
     <div>
       <header className="px-4 pt-[max(1rem,env(safe-area-inset-top))] pb-3">
-        <Link to="/hoy" className="text-muted text-sm">
+        <Link to="/hoy" className="label-hud text-[10px] text-muted active:text-accent">
           ← Hoy
         </Link>
-        <h1 className="text-2xl font-bold mt-2">Cuenta</h1>
+        <PageTitle className="mt-2">Cuenta</PageTitle>
       </header>
 
       <div className="px-4 space-y-4">
         {estado.conectado ? (
           <>
             <Card className="p-4">
-              <p className="text-xs text-muted uppercase tracking-wide">Sesión iniciada</p>
-              <p className="font-semibold mt-1">{estado.email}</p>
-              <p className="text-sm text-muted mt-1">
+              <p className="label-hud text-[10px] text-ok flex items-center gap-2">
+                <span className="pulse-dot inline-block w-2 h-2 bg-ok rotate-45 shadow-[0_0_8px_0_rgba(57,255,138,0.9)]" />
+                Sesión iniciada
+              </p>
+              <p className="font-display font-bold mt-2 break-all">{estado.email}</p>
+              <p className="num text-sm text-muted mt-1.5">
                 {ultimaSync ? `Último sync ${relativeDate(ultimaSync)}` : 'Todavía sin sincronizar'}
               </p>
             </Card>
@@ -147,7 +150,7 @@ export default function AccountPage() {
                 }
               }}
             >
-              {ocupado ? 'Sincronizando…' : 'Sincronizar ahora'}
+              {ocupado ? '⋯ Sincronizando' : '⇅ Sincronizar ahora'}
             </Button>
 
             <PasswordForm />
@@ -168,7 +171,8 @@ export default function AccountPage() {
           </>
         ) : (
           <>
-            <Card className="p-4">
+            <Card tone="cyan" className="p-4">
+              <p className="label-hud text-[10px] text-accent-2/80 mb-2">modo local</p>
               <p className="text-sm text-muted">
                 La app funciona completa sin cuenta. Iniciar sesión sirve para tener los
                 mismos datos en otro dispositivo y para las sugerencias con IA.
@@ -184,10 +188,11 @@ export default function AccountPage() {
                     setError('');
                   }}
                   className={
-                    'flex-1 min-h-11 rounded-xl border font-semibold ' +
+                    'flex-1 min-h-12 chamfer-sm border label-hud text-[11px] ' +
+                    'transition-[background-color,box-shadow,border-color] ' +
                     (modo === m
-                      ? 'bg-accent text-ink border-accent'
-                      : 'bg-surface text-muted border-line')
+                      ? 'bg-accent text-ink border-accent glow-red'
+                      : 'bg-surface text-muted border-line active:border-accent/40')
                   }
                 >
                   {m === 'login' ? 'Entrar' : 'Crear cuenta'}

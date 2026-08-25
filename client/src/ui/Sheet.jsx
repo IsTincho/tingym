@@ -1,5 +1,4 @@
 import { useEffect } from 'react';
-import { Button } from './primitives.jsx';
 
 // Hoja inferior en vez de modal centrado: el pulgar llega abajo, no al medio.
 // Nunca se anida (restriccion 2.2): si hay una abierta, la pantalla no abre otra.
@@ -20,7 +19,7 @@ export default function Sheet({ open, title, onClose, children }) {
   return (
     <div className="fixed inset-0 z-50 flex flex-col justify-end">
       <div
-        className="absolute inset-0 bg-black/60"
+        className="absolute inset-0 bg-ink/80 backdrop-blur-[2px]"
         onClick={onClose}
         aria-hidden="true"
       />
@@ -28,13 +27,18 @@ export default function Sheet({ open, title, onClose, children }) {
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        className="relative bg-surface border-t border-line rounded-t-3xl max-h-[85dvh] flex flex-col"
+        className="relative chamfer-top bg-surface max-h-[85dvh] flex flex-col
+                   shadow-[0_-1px_0_0_var(--color-accent),0_-18px_50px_-20px_rgba(255,42,74,0.55)]"
       >
-        <div className="flex items-center justify-between px-4 py-3 border-b border-line shrink-0">
-          <h2 className="font-semibold">{title}</h2>
-          <Button variant="ghost" onClick={onClose} className="px-2">
-            Cerrar
-          </Button>
+        <div className="flex items-center justify-between pl-6 pr-3 py-3.5 border-b border-line shrink-0">
+          <h2 className="label-hud text-xs text-accent text-glow-red truncate">{title}</h2>
+          {/* Un boton, no un icono: se cierra con el pulgar sin apuntar. */}
+          <button
+            onClick={onClose}
+            className="shrink-0 min-h-11 px-3 label-hud text-[11px] text-muted active:text-accent"
+          >
+            Cerrar ✕
+          </button>
         </div>
         <div
           className="overflow-y-auto p-4 pb-[max(1rem,env(safe-area-inset-bottom))]"

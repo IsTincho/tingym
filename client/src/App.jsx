@@ -62,18 +62,38 @@ export default function App() {
       </main>
 
       {!enSesion && (
-        <nav className="fixed bottom-0 inset-x-0 bg-surface/95 backdrop-blur border-t border-line pb-[env(safe-area-inset-bottom)]">
+        <nav
+          className="fixed bottom-0 inset-x-0 z-40 bg-ink-2/92 backdrop-blur-md
+                     border-t border-accent/25 pb-[env(safe-area-inset-bottom)]
+                     shadow-[0_-1px_18px_-6px_rgba(255,42,74,0.55)]"
+        >
           <div className="flex">
             {TABS.map((t) => (
               <NavLink
                 key={t.to}
                 to={t.to}
                 className={({ isActive }) =>
-                  'flex-1 text-center py-4 text-sm font-semibold ' +
-                  (isActive ? 'text-accent' : 'text-muted')
+                  'relative flex-1 text-center py-3.5 min-h-14 flex flex-col items-center ' +
+                  'justify-center font-display font-bold uppercase text-[10px] ' +
+                  'tracking-[0.06em] transition-colors ' +
+                  (isActive ? 'text-accent text-glow-red' : 'text-muted active:text-text')
                 }
               >
-                {t.label}
+                {({ isActive }) => (
+                  <>
+                    {/* Filete superior: marca la pestana activa sin robarle
+                        alto a la etiqueta. */}
+                    <span
+                      className={
+                        'absolute top-0 left-1/2 -translate-x-1/2 h-[2px] transition-all ' +
+                        (isActive
+                          ? 'w-8 bg-accent shadow-[0_0_10px_1px_rgba(255,42,74,0.9)]'
+                          : 'w-0 bg-transparent')
+                      }
+                    />
+                    {t.label}
+                  </>
+                )}
               </NavLink>
             ))}
           </div>

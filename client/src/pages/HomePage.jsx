@@ -5,12 +5,14 @@ import { buildInsights } from '@gym/shared';
 import { listExercises, listRoutines } from '../db/repo.js';
 import { discardSession, getActiveSession, listDoneSessions, startSession } from '../db/sessionRepo.js';
 import { listBodyweight, logBodyweight, pendingWeeklyWeighIn } from '../db/trackingRepo.js';
-import { Button, Card, Field, Input } from '../ui/primitives.jsx';
+import { Button, Card, Field, Input, PageTitle, SectionLabel } from '../ui/primitives.jsx';
 import Sheet from '../ui/Sheet.jsx';
 import { kg, relativeDate, setsLabel } from '../lib/format.js';
 
+// La severidad se lee por el neon del borde, no por un icono: de reojo,
+// entre series, el color llega antes que la forma.
 const SEVERITY_STYLE = {
-  alta: 'border-amber-500/40 bg-amber-500/10',
+  alta: 'border-warn/45 bg-warn/[0.07] shadow-[0_0_22px_-10px_rgba(255,176,32,0.8)]',
   media: 'border-line bg-surface',
   info: 'border-line bg-surface',
 };
@@ -41,9 +43,18 @@ export default function HomePage() {
 
   return (
     <div>
-      <header className="px-4 pt-[max(1rem,env(safe-area-inset-top))] pb-3 flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Hoy</h1>
-        <Link to="/cuenta" className="text-sm text-muted min-h-11 flex items-center">
+      <header className="px-4 pt-[max(1rem,env(safe-area-inset-top))] pb-4 flex items-center justify-between">
+        <div>
+          <PageTitle>Hoy</PageTitle>
+          <p className="label-hud text-[10px] text-muted/70 mt-1">
+            {active ? '● sesión abierta' : 'sistema listo'}
+          </p>
+        </div>
+        <Link
+          to="/cuenta"
+          className="label-hud text-[10px] text-muted min-h-11 px-3 flex items-center
+                     border border-line chamfer-sm active:text-accent active:border-accent/50"
+        >
           Cuenta
         </Link>
       </header>
@@ -51,15 +62,17 @@ export default function HomePage() {
       <div className="px-4 space-y-4">
         {/* Sesion abierta: lo primero, siempre. Es a lo que volves del vestuario. */}
         {active ? (
-          <Card className="p-4 border-accent/40">
-            <p className="text-xs text-accent uppercase tracking-wide font-semibold">
+          <Card className="relative overflow-hidden p-4 border-accent/45 glow-red-soft sweep">
+            <p className="label-hud text-[11px] text-accent text-glow-red flex items-center gap-2">
+              <span className="pulse-dot inline-block w-2 h-2 bg-accent rotate-45 shadow-[0_0_8px_0_rgba(255,42,74,0.9)]" />
               Entrenamiento en curso
             </p>
-            <p className="font-semibold mt-1">
+            <p className="font-semibold mt-2">
               {active.dayKey ? `${active.dayKey} · ` : ''}
-              {active.entries.length} ejercicios · empezado {relativeDate(active.date)}
+              <span className="num">{active.entries.length}</span> ejercicios · empezado{' '}
+              {relativeDate(active.date)}
             </p>
-            <div className="flex gap-2 mt-3">
+            <div className="relative z-10 flex gap-2 mt-4">
               <Button className="flex-1" onClick={() => navigate(`/sesion/${active._id}`)}>
                 Seguir
               </Button>
@@ -74,17 +87,18 @@ export default function HomePage() {
             </div>
           </Card>
         ) : (
-          <Button className="w-full min-h-14 text-base" onClick={() => setPicking(true)}>
-            Empezar entrenamiento
+          <Button className="w-full min-h-16 text-base" onClick={() => setPicking(true)}>
+            ▸ Empezar entrenamiento
           </Button>
         )}
 
         {/* Pesaje semanal: el doc pide peso los lunes, asi que el recordatorio
             aparece hasta que el pesaje de esta semana exista. */}
         {weighIn?.pending && (
-          <Card className="p-4 border-amber-500/40 bg-amber-500/10">
+          <Card tone="none" className="p-4 border-warn/45 bg-warn/[0.07]">
+            <p className="label-hud text-[10px] text-warn mb-1.5">pendiente</p>
             <p className="font-semibold">Falta el pesaje de esta semana</p>
-            <p className="text-sm text-muted mt-0.5">
+            <p className="text-sm text-muted mt-1">
               {weighIn.last
                 ? `Último: ${kg(weighIn.last.kg)} kg, ${relativeDate(weighIn.last.date)}.`
                 : 'Todavía no registraste tu peso.'}
@@ -97,19 +111,17 @@ export default function HomePage() {
 
         {insights.length > 0 && (
           <section>
-            <h2 className="text-sm font-semibold text-muted uppercase tracking-wide mb-2">
-              Sugerencias
-            </h2>
+            <SectionLabel>Sugerencias</SectionLabel>
             <ul className="space-y-2">
               {insights.map((i) => (
                 <li key={i.id}>
-                  <div className={`rounded-2xl border p-4 ${SEVERITY_STYLE[i.severity]}`}>
+                  <div className={`chamfer border p-4 ${SEVERITY_STYLE[i.severity]}`}>
                     <p className="font-semibold">{i.title}</p>
-                    <p className="text-sm text-muted mt-0.5">{i.body}</p>
+                    <p className="text-sm text-muted mt-1">{i.body}</p>
                     {i.exerciseId && (
                       <Link
                         to={`/progreso/${i.exerciseId}`}
-                        className="text-sm text-accent mt-2 inline-block"
+                        className="label-hud text-[10px] text-accent-2 text-glow-cyan mt-3 inline-block"
                       >
                         Ver progreso →
                       </Link>
@@ -123,14 +135,13 @@ export default function HomePage() {
 
         {ultima && (
           <section>
-            <h2 className="text-sm font-semibold text-muted uppercase tracking-wide mb-2">
-              Último entrenamiento
-            </h2>
-            <Card className="p-4">
-              <p className="text-sm text-muted">{relativeDate(ultima.date)}</p>
-              <ul className="mt-2 space-y-1">
+            <SectionLabel>Último entrenamiento</SectionLabel>
+            <Card tone="cyan" className="p-4">
+              <p className="label-hud text-[10px] text-muted">{relativeDate(ultima.date)}</p>
+              <ul className="mt-2.5 space-y-1.5">
                 {ultima.entries.slice(0, 4).map((e, i) => (
-                  <li key={i} className="text-sm">
+                  <li key={i} className="text-sm num text-text/90">
+                    <span className="text-accent/60 mr-2">{String(i + 1).padStart(2, '0')}</span>
                     {setsLabel(e.sets)}
                   </li>
                 ))}
@@ -189,19 +200,20 @@ function RoutinePickerSheet({ open, routines, onClose, onPick }) {
       <div className="space-y-4">
         {routines.map((r) => (
           <div key={r._id}>
-            <p className="text-sm font-semibold text-muted mb-2">{r.name}</p>
+            <p className="label-hud text-[10px] text-accent/80 mb-2.5">{r.name}</p>
             <ul className="space-y-2">
               {r.days.map((d) => (
                 <li key={d.key}>
                   <button
-                    className="w-full text-left p-3 min-h-14 rounded-xl bg-surface-2 border border-line"
+                    className="w-full text-left p-3.5 min-h-14 chamfer-sm bg-surface-2 border border-line
+                               active:border-accent/60 active:glow-red-soft transition-[border-color,box-shadow]"
                     onClick={() => onPick({ routineId: r._id, dayKey: d.key })}
                   >
                     <span className="font-semibold">
-                      {d.key} · {d.label}
+                      <span className="font-display text-accent">{d.key}</span> · {d.label}
                     </span>
-                    <span className="block text-sm text-muted">
-                      {d.slots.length} ejercicios
+                    <span className="block text-sm text-muted mt-0.5">
+                      <span className="num">{d.slots.length}</span> ejercicios
                     </span>
                   </button>
                 </li>
@@ -216,11 +228,14 @@ function RoutinePickerSheet({ open, routines, onClose, onPick }) {
         {/* Sin rutina tambien se entrena: el dia que la maquina esta ocupada
             o entrenas en otro gimnasio, la app no puede bloquearte. */}
         <button
-          className="w-full text-left p-3 min-h-14 rounded-xl bg-surface-2 border border-line"
+          className="w-full text-left p-3.5 min-h-14 chamfer-sm bg-surface-2 border border-accent-2/30
+                     active:border-accent-2/70 active:glow-cyan transition-[border-color,box-shadow]"
           onClick={() => onPick({ routineId: null, dayKey: null })}
         >
-          <span className="font-semibold">Entrenamiento libre</span>
-          <span className="block text-sm text-muted">Agregás los ejercicios sobre la marcha</span>
+          <span className="font-semibold text-accent-2">Entrenamiento libre</span>
+          <span className="block text-sm text-muted mt-0.5">
+            Agregás los ejercicios sobre la marcha
+          </span>
         </button>
       </div>
     </Sheet>

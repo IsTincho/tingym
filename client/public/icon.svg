@@ -1,10 +1,38 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" rx="96" fill="#0b0f14"/>
-  <g fill="#22d3ee">
-    <rect x="96" y="216" width="48" height="80" rx="12"/>
-    <rect x="368" y="216" width="48" height="80" rx="12"/>
-    <rect x="152" y="184" width="56" height="144" rx="16"/>
-    <rect x="304" y="184" width="56" height="144" rx="16"/>
-    <rect x="200" y="236" width="112" height="40" rx="12"/>
+  <defs>
+    <linearGradient id="neon" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ff2a4a"/>
+      <stop offset="1" stop-color="#c026d3"/>
+    </linearGradient>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="10" result="b"/>
+      <feMerge>
+        <feMergeNode in="b"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Fondo negro con la esquina cortada: el mismo chamfer que la interfaz. -->
+  <path d="M64 0 H512 V448 L448 512 H0 V64 Z" fill="#05060a"/>
+
+  <!-- Filete rojo del borde vivo, arriba a la derecha. -->
+  <path d="M64 0 H512 V96 H64 Z" fill="url(#neon)" opacity="0.14"/>
+  <path d="M64 0 H512" stroke="#ff2a4a" stroke-width="10" fill="none"/>
+
+  <g filter="url(#glow)">
+    <g fill="url(#neon)">
+      <!-- Discos y barra: la misma mancuerna, ahora angular. -->
+      <path d="M88 216 h44 v80 h-44 z"/>
+      <path d="M380 216 h44 v80 h-44 z"/>
+      <path d="M148 176 h56 v160 h-56 z"/>
+      <path d="M308 176 h56 v160 h-56 z"/>
+      <path d="M204 234 h104 v44 h-104 z"/>
+    </g>
+  </g>
+
+  <!-- Scanline: la firma del tema. -->
+  <g fill="#00e5ff" opacity="0.5">
+    <rect x="148" y="248" width="216" height="4"/>
   </g>
 </svg>

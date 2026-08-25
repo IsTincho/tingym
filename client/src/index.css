@@ -1,15 +1,30 @@
 @import 'tailwindcss';
 
-/* Un solo tema (oscuro): el doc descarta el toggle claro/oscuro en V1. */
+/* NEON RIG — HUD de terminal industrial.
+   Un solo tema (oscuro): el doc descarta el toggle claro/oscuro en V1.
+   Rojo neon para la accion, cian y magenta para el codigo de veredictos. */
 @theme {
-  --color-ink: #0b0f14;
-  --color-surface: #131a22;
-  --color-surface-2: #1c2632;
-  --color-line: #263140;
-  --color-text: #e6edf5;
-  --color-muted: #8ea0b5;
-  --color-accent: #22d3ee;
-  --color-danger: #f87171;
+  --color-ink: #05060a;
+  --color-ink-2: #090b11;
+  --color-surface: #0d0e14;
+  --color-surface-2: #15171f;
+  --color-line: #23262f;
+  --color-text: #e8ecf3;
+  --color-muted: #7d8798;
+
+  --color-accent: #ff2a4a;
+  --color-accent-soft: #ff6b7f;
+  --color-accent-2: #00e5ff;
+  --color-accent-3: #c026d3;
+  --color-ok: #39ff8a;
+  --color-warn: #ffb020;
+  --color-danger: #ff2a4a;
+
+  /* Display monoespaciada del sistema: la app es offline-first y una fuente
+     remota rompe el arranque sin senal. Cero requests, mismo caracter. */
+  --font-display: ui-monospace, 'SFMono-Regular', 'SF Mono', 'Cascadia Mono',
+    'Roboto Mono', Menlo, Consolas, monospace;
+  --font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
 }
 
 html,
@@ -21,8 +36,43 @@ body,
 body {
   background-color: var(--color-ink);
   color: var(--color-text);
+  font-family: var(--font-sans);
   overscroll-behavior-y: none;
   -webkit-tap-highlight-color: transparent;
+}
+
+/* Grid + scanlines de fondo. Fijo y detras de todo: da profundidad sin
+   costar un repaint por scroll. */
+body::before,
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+
+body::before {
+  background-image:
+    linear-gradient(rgba(255, 42, 74, 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 229, 255, 0.035) 1px, transparent 1px);
+  background-size: 44px 44px;
+  mask-image: radial-gradient(ellipse 120% 80% at 50% 0%, #000 20%, transparent 80%);
+}
+
+body::after {
+  background-image: repeating-linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.018) 0px,
+    rgba(255, 255, 255, 0.018) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+}
+
+#root {
+  position: relative;
+  z-index: 1;
 }
 
 /* Se usa parado y con una mano: nada de zoom accidental al tocar un input. */
@@ -40,4 +90,190 @@ input[type='number']::-webkit-outer-spin-button,
 input[type='number']::-webkit-inner-spin-button {
   -webkit-appearance: none;
   margin: 0;
+}
+
+::selection {
+  background: var(--color-accent);
+  color: #05060a;
+}
+
+/* --- Utilidades del lenguaje visual ------------------------------------- */
+
+/* Esquina cortada en diagonal: HUD, no material design. El radio se pierde,
+   asi que las utilidades rounded-* conviven pero no se ven. */
+@utility chamfer {
+  clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+}
+
+@utility chamfer-sm {
+  clip-path: polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px);
+}
+
+@utility chamfer-top {
+  clip-path: polygon(20px 0, 100% 0, 100% 100%, 0 100%, 0 20px);
+}
+
+/* Texto y cajas con brillo neon. Dos capas: uno cerrado para el filo y uno
+   abierto para el halo. */
+@utility glow-red {
+  box-shadow:
+    0 0 0 1px rgba(255, 42, 74, 0.5),
+    0 0 12px -2px rgba(255, 42, 74, 0.55),
+    0 0 30px -6px rgba(255, 42, 74, 0.4);
+}
+
+@utility glow-red-soft {
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 42, 74, 0.28),
+    0 0 18px -8px rgba(255, 42, 74, 0.5);
+}
+
+@utility glow-cyan {
+  box-shadow:
+    0 0 0 1px rgba(0, 229, 255, 0.45),
+    0 0 14px -4px rgba(0, 229, 255, 0.5);
+}
+
+@utility text-glow-red {
+  text-shadow: 0 0 8px rgba(255, 42, 74, 0.65), 0 0 22px rgba(255, 42, 74, 0.35);
+}
+
+@utility text-glow-cyan {
+  text-shadow: 0 0 8px rgba(0, 229, 255, 0.6), 0 0 22px rgba(0, 229, 255, 0.3);
+}
+
+/* Etiqueta tecnica: mayusculas, mono y tracking ancho. Es el tono de voz de
+   toda la interfaz fuera del texto corrido. */
+@utility label-hud {
+  font-family: var(--font-display);
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  font-weight: 600;
+}
+
+/* Numeros: tabulares para que no bailen al cambiar de peso o de reps. */
+@utility num {
+  font-family: var(--font-display);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum';
+}
+
+/* Hairline superior de las tarjetas: el degradado rojo marca el borde vivo.
+   Va sobre el clip-path del chamfer, asi que arranca despues del corte. */
+.rig-edge {
+  position: relative;
+}
+
+.rig-edge::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 12px;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    var(--color-accent),
+    rgba(255, 42, 74, 0.25) 40%,
+    transparent 85%
+  );
+  pointer-events: none;
+}
+
+.rig-edge-cyan::before {
+  background: linear-gradient(
+    90deg,
+    var(--color-accent-2),
+    rgba(0, 229, 255, 0.22) 40%,
+    transparent 85%
+  );
+}
+
+/* --- Titulo con glitch --------------------------------------------------- */
+
+.glitch {
+  position: relative;
+  font-family: var(--font-display);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.glitch::before,
+.glitch::after {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  clip-path: inset(0 0 0 0);
+}
+
+.glitch::before {
+  color: var(--color-accent);
+  animation: glitch-a 2.6s steps(2, end) 1 both;
+}
+
+.glitch::after {
+  color: var(--color-accent-2);
+  animation: glitch-b 2.6s steps(2, end) 1 both;
+}
+
+@keyframes glitch-a {
+  0%, 7% { transform: translate(-2px, 0); opacity: 0.85; clip-path: inset(0 0 62% 0); }
+  8%, 15% { transform: translate(2px, 1px); opacity: 0.7; clip-path: inset(58% 0 0 0); }
+  16%, 22% { transform: translate(-1px, -1px); opacity: 0.6; clip-path: inset(30% 0 40% 0); }
+  23%, 100% { transform: none; opacity: 0; clip-path: inset(0 0 0 0); }
+}
+
+@keyframes glitch-b {
+  0%, 6% { transform: translate(2px, 1px); opacity: 0.7; clip-path: inset(45% 0 20% 0); }
+  7%, 14% { transform: translate(-2px, -1px); opacity: 0.55; clip-path: inset(0 0 70% 0); }
+  15%, 100% { transform: none; opacity: 0; clip-path: inset(0 0 0 0); }
+}
+
+/* Pulso del punto de estado: lo unico que se mueve en loop. */
+@keyframes rig-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.25; }
+}
+
+.pulse-dot {
+  animation: rig-pulse 1.8s ease-in-out infinite;
+}
+
+/* Barrido del contador de la sesion activa. */
+@keyframes rig-sweep {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(220%); }
+}
+
+.sweep::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 42, 74, 0.22),
+    transparent
+  );
+  animation: rig-sweep 2.8s linear infinite;
+  pointer-events: none;
+}
+
+/* El brillo es decoracion; el movimiento, opcional. Nadie tiene que marearse
+   entre series. */
+@media (prefers-reduced-motion: reduce) {
+  .glitch::before,
+  .glitch::after,
+  .pulse-dot,
+  .sweep::after {
+    animation: none;
+    opacity: 0;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
 }

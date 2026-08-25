@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { listRoutines, createRoutine, deleteRoutine } from '../db/repo.js';
-import { Button, Card, EmptyState, Field, Input } from '../ui/primitives.jsx';
+import { Button, Card, EmptyState, Field, Input, PageTitle } from '../ui/primitives.jsx';
 import Sheet from '../ui/Sheet.jsx';
 
 export default function RoutinesPage() {
@@ -22,9 +22,13 @@ export default function RoutinesPage() {
   return (
     <div>
       <header className="px-4 pt-[max(1rem,env(safe-area-inset-top))] pb-3 flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Rutinas</h1>
-        <div className="flex items-center gap-3">
-          <Link to="/ejercicios" className="text-sm text-muted min-h-11 flex items-center">
+        <PageTitle>Rutinas</PageTitle>
+        <div className="flex items-center gap-2">
+          <Link
+            to="/ejercicios"
+            className="label-hud text-[10px] text-muted min-h-11 px-3 flex items-center
+                       border border-line chamfer-sm active:text-accent active:border-accent/50"
+          >
             Ejercicios
           </Link>
           <Button onClick={() => setCreating(true)}>Nueva</Button>
@@ -46,14 +50,16 @@ export default function RoutinesPage() {
                 <Card className="flex items-stretch">
                   <Link to={`/rutinas/${r._id}`} className="flex-1 p-4 min-h-16">
                     <p className="font-semibold">{r.name}</p>
-                    <p className="text-sm text-muted mt-0.5">
-                      {r.days.length} {r.days.length === 1 ? 'día' : 'días'} · {slots}{' '}
+                    <p className="text-sm text-muted mt-1">
+                      <span className="num text-accent">{r.days.length}</span>{' '}
+                      {r.days.length === 1 ? 'día' : 'días'} ·{' '}
+                      <span className="num text-accent">{slots}</span>{' '}
                       {slots === 1 ? 'ejercicio' : 'ejercicios'}
                     </p>
                   </Link>
                   <Button
                     variant="ghost"
-                    className="px-4 rounded-l-none"
+                    className="px-4 border-l border-line active:text-danger"
                     aria-label={`Borrar ${r.name}`}
                     onClick={() => {
                       if (confirm(`¿Borrar la rutina "${r.name}"?`)) deleteRoutine(r._id);
