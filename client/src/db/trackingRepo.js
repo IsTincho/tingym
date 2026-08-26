@@ -8,14 +8,23 @@ export function listBodyweight({ limit = 200 } = {}) {
   return db.bodyweight.orderBy('date').reverse().limit(limit).toArray();
 }
 
-export async function logBodyweight({ kg, date = null }) {
+export async function logBodyweight({ kg, date = null, measurements = {} }) {
   const ownerId = await getCurrentUserId();
   const ts = nowIso();
+  // Los campos vacios del formulario llegan como '' y como null: los dos
+  // significan "no me medi esto hoy", y el esquema espera null.
+  const cm = (v) => (v === '' || v == null || Number.isNaN(Number(v)) ? null : Number(v));
   const doc = bodyweightEntrySchema.parse({
     _id: newId(),
     ownerId,
     date: date ?? ts,
     kg: Number(kg),
+    measurements: {
+      shoulders: cm(measurements.shoulders),
+      chest: cm(measurements.chest),
+      arm: cm(measurements.arm),
+      waist: cm(measurements.waist),
+    },
     syncState: 'local',
     clientUpdatedAt: ts,
   });

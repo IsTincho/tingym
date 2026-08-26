@@ -12,13 +12,23 @@ import ExercisesPage from './pages/ExercisesPage.jsx';
 import WeightPage from './pages/WeightPage.jsx';
 import MealsPage from './pages/MealsPage.jsx';
 import AccountPage from './pages/AccountPage.jsx';
+import {
+  IconComidas,
+  IconHoy,
+  IconPeso,
+  IconProgreso,
+  IconRutinas,
+} from './ui/icons.jsx';
 
+// Icono Y etiqueta, no uno de los dos. El icono da el blanco grande para el
+// pulgar y se reconoce de reojo; la etiqueta es la que evita adivinar qué
+// significa el dibujo. Cinco es el tope de una barra inferior.
 const TABS = [
-  { to: '/hoy', label: 'Hoy' },
-  { to: '/progreso', label: 'Progreso' },
-  { to: '/rutinas', label: 'Rutinas' },
-  { to: '/comidas', label: 'Comidas' },
-  { to: '/peso', label: 'Peso' },
+  { to: '/hoy', label: 'Hoy', Icon: IconHoy },
+  { to: '/progreso', label: 'Progreso', Icon: IconProgreso },
+  { to: '/rutinas', label: 'Rutinas', Icon: IconRutinas },
+  { to: '/comidas', label: 'Comidas', Icon: IconComidas },
+  { to: '/peso', label: 'Peso', Icon: IconPeso },
 ];
 
 export default function App() {
@@ -73,8 +83,8 @@ export default function App() {
                 key={t.to}
                 to={t.to}
                 className={({ isActive }) =>
-                  'relative flex-1 text-center py-3.5 min-h-14 flex flex-col items-center ' +
-                  'justify-center font-display font-bold uppercase text-[10px] ' +
+                  'relative flex-1 text-center py-2.5 min-h-14 flex flex-col items-center ' +
+                  'justify-center gap-1 font-display font-bold uppercase text-[10px] ' +
                   'tracking-[0.06em] transition-colors ' +
                   (isActive ? 'text-accent text-glow-red' : 'text-muted active:text-text')
                 }
@@ -89,6 +99,12 @@ export default function App() {
                         (isActive
                           ? 'w-8 bg-accent shadow-[0_0_10px_1px_rgba(255,42,74,0.9)]'
                           : 'w-0 bg-transparent')
+                      }
+                    />
+                    <t.Icon
+                      className={
+                        'w-[22px] h-[22px] shrink-0 transition-[filter] ' +
+                        (isActive ? 'drop-shadow-[0_0_6px_rgba(255,42,74,0.8)]' : '')
                       }
                     />
                     {t.label}

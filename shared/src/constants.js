@@ -42,3 +42,14 @@ export const MEAL_SLOT_LABELS = {
   cena: 'Cena',
   snack: 'Snack',
 };
+
+// Medidas corporales, en el orden en que se toman: de arriba hacia abajo. Ese
+// orden es el que evita equivocarse anotando cuatro numeros parecidos seguidos.
+export const MEASUREMENTS = ['shoulders', 'chest', 'arm', 'waist'];
+
+export const MEASUREMENT_LABELS = {
+  shoulders: 'Hombros',
+  chest: 'Pecho',
+  arm: 'Brazo',
+  waist: 'Cintura',
+};

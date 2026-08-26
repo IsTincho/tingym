@@ -26,10 +26,18 @@ export function startOfDay(date) {
 }
 
 /** 42.5 -> "42,5"; 40 -> "40". Coma decimal, sin ceros de relleno. */
-export function kg(value) {
+// Numero decimal en castellano: la coma es el separador. Redondea a dos
+// decimales porque ni una balanza ni una cinta metrica dan mas precision.
+function decimal(value) {
   if (value == null) return '—';
   return String(Math.round(value * 100) / 100).replace('.', ',');
 }
+
+// Dos nombres para la misma funcion, no dos implementaciones. Se leen distinto
+// en cada pantalla —`kg(peso)` y `cm(brazo)`— pero la convencion decimal es la
+// misma y tiene que seguir siendolo.
+export const kg = decimal;
+export const cm = decimal;
 
 export function restLabel(seconds) {
   if (seconds == null) return '—';

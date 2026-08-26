@@ -52,7 +52,9 @@ export default function RoutineEditPage() {
         <BackLink to="/rutinas">← Rutinas</BackLink>
         {/* El nombre se edita en el lugar: no hay pantalla de "editar rutina". */}
         <input
-          className="mt-2 w-full bg-transparent font-display font-bold text-2xl uppercase
+          // min-h-12: es un input, no un titulo. Medía 22 px de alto y había
+          // que acertarle a la línea de texto para poder renombrar.
+          className="mt-2 w-full min-h-12 bg-transparent font-display font-bold text-2xl uppercase
                      tracking-[0.06em] text-glow-red outline-none border-b border-transparent
                      transition-colors focus:border-accent/60"
           value={routine.name}
@@ -118,8 +120,8 @@ export default function RoutineEditPage() {
                       <span className="truncate">{ex?.name ?? 'Ejercicio borrado'}</span>
                     </p>
                     <p className="num text-sm text-muted mt-1">
-                      {slot.targetSets} × {slot.repRangeMin}-{slot.repRangeMax} ·{' '}
-                      {restLabel(slot.restSeconds)} descanso
+                      {slot.targetSets} × {slot.repRangeMin}-{slot.repRangeMax}
+                      {slot.perSide ? ' por lado' : ''} · {restLabel(slot.restSeconds)} descanso
                     </p>
                     {(slot.alternativeIds ?? []).length > 0 && (
                       <p className="text-sm text-accent-2 mt-1 truncate">
@@ -310,7 +312,7 @@ function SlotSheet({ sheet, routine, byId, exercises, onClose }) {
 
   if (open && slot && seededFor !== sheet) {
     setSeededFor(sheet);
-    setDraft({ alternativeIds: [], ...slot });
+    setDraft({ alternativeIds: [], perSide: false, ...slot });
     setBuscar('');
   }
 
@@ -330,6 +332,7 @@ function SlotSheet({ sheet, routine, byId, exercises, onClose }) {
       repRangeMin: Math.min(min, max),
       repRangeMax: Math.max(min, max),
       restSeconds: Number(draft.restSeconds) || 0,
+      perSide: Boolean(draft.perSide),
       note: draft.note ?? '',
       alternativeIds: draft.alternativeIds ?? [],
     });
@@ -375,6 +378,32 @@ function SlotSheet({ sheet, routine, byId, exercises, onClose }) {
             onChange={(e) => setDraft({ ...draft, restSeconds: num(e.target.value) })}
           />
         </Field>
+
+        {/* Boton y no checkbox nativo: el checkbox de 13 px no se toca con el
+            dedo, y aca todo lo tocable mide 44. */}
+        <button
+          type="button"
+          onClick={() => setDraft({ ...draft, perSide: !draft.perSide })}
+          aria-pressed={Boolean(draft.perSide)}
+          className={
+            'w-full min-h-12 px-3 chamfer-sm border font-display text-sm text-left ' +
+            'flex items-center gap-3 transition-colors ' +
+            (draft.perSide
+              ? 'bg-surface-2 border-accent-2 text-accent-2'
+              : 'bg-surface-2 border-line text-muted')
+          }
+        >
+          <span
+            aria-hidden
+            className={
+              'w-5 h-5 shrink-0 border flex items-center justify-center ' +
+              (draft.perSide ? 'border-accent-2 bg-accent-2 text-ink' : 'border-line')
+            }
+          >
+            {draft.perSide ? '✓' : ''}
+          </span>
+          Por lado (unilateral)
+        </button>
 
         <Field label="Nota" hint="Ej: codo fijo, bajá lento">
           <Input

@@ -55,6 +55,25 @@ describe('routineSlotSchema · alternativas', () => {
   });
 });
 
+describe('routineSlotSchema · por lado', () => {
+  it('por defecto es bilateral', () => {
+    expect(routineSlotSchema.safeParse(base).data.perSide).toBe(false);
+  });
+
+  // Es del slot y no del ejercicio: la misma plancha lateral puede ir por lado
+  // un dia y a tiempo total otro.
+  it('se marca por slot', () => {
+    const r = routineSlotSchema.safeParse({ ...base, perSide: true });
+    expect(r.success).toBe(true);
+    expect(r.data.perSide).toBe(true);
+  });
+
+  it('un slot viejo sin el campo sigue parseando', () => {
+    const { ...viejo } = base;
+    expect(routineSlotSchema.safeParse(viejo).success).toBe(true);
+  });
+});
+
 describe('sessionEntrySchema · alternativas copiadas', () => {
   it('una entrada vieja sin el campo sigue parseando', () => {
     const r = sessionEntrySchema.safeParse({ exerciseId: 'ex-sentadilla' });

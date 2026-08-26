@@ -167,6 +167,7 @@ export function addSlot(routineId, dayKey, slot) {
       restSeconds: 120,
       note: '',
       alternativeIds: [],
+      perSide: false,
       ...slot,
     });
     return r;

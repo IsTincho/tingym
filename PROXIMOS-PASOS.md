@@ -509,16 +509,51 @@ veredicto `revisar_tecnica`), así que se corrigió el token y no los dos usos.
 Se le escapó a la pasada de contraste anterior porque esa buscó modificadores
 de opacidad, y este color fallaba al 100 %.
 
-### Lo que sigue faltando de la rutina
+### Medidas corporales
 
-- **Medidas corporales.** El doc tiene tabla de hombros/pecho/brazo/cintura y
-  dice explícitamente que *"la balanza es mala herramienta con tu objetivo"*.
-  La pantalla Peso sólo guarda kg.
-- **"Por lado".** `2 x 30-45 seg por lado` no se puede expresar: se anota la
-  mitad o el doble.
-- **Core como pareja A/B alternante.**
-- **Iconos en la navegación.** Hoy son cinco etiquetas de texto. La regla
-  `nav-label-icon` pide icono + texto; SVG, nunca emoji.
+El doc dice que *"la balanza es mala herramienta con tu objetivo"* y tiene su
+propia tabla de hombros/pecho/brazo/cintura, pero la app sólo guardaba kg.
+
+Van **adentro del pesaje**, no en una colección aparte, porque en la planilla
+de papel van en la misma fila: una fecha, un peso, y las medidas si ese día
+tocaba medirse. Separarlas obligaría a cruzar dos series por fecha para mostrar
+lo que es una sola lectura del cuerpo.
+
+El formulario las muestra plegadas detrás de un botón: el pesaje es semanal y
+la cinta es mensual, así que mostrar cuatro campos vacíos en cada anotada es
+pedir que se ignoren doce veces por cada vez que se usan.
+
+La tarjeta compara contra **la medición anterior con cinta**, no contra el
+pesaje anterior — es lo que contesta "¿estoy creciendo?".
+
+`measurements` entra con `.default({})`, así que los pesajes que ya están en el
+teléfono siguen parseando sin migración. Hay un test que lo fija, porque si eso
+se rompe la app no arranca para quien ya la usaba.
+
+### "Por lado" y iconos
+
+`perSide` es un flag **del slot**, no del ejercicio: la misma plancha lateral
+va por lado un día y a tiempo total otro. Se muestra en el editor, en el
+objetivo de la sesión y en la etiqueta del campo de reps.
+
+La navegación pasó de cinco etiquetas de texto a icono + etiqueta. SVG inline,
+no una librería —son cinco y pesan menos que el import— y **nunca emojis**: se
+ven distinto en cada sistema y no heredan el color del tema. Los cinco
+comparten viewBox 24, trazo 1.75 y `currentColor`; eso es lo que los hace
+verse de la misma familia.
+
+### Dos tap targets más que aparecieron midiendo
+
+El título editable de la rutina medía **22 px** de alto: había que acertarle a
+la línea de texto para renombrar. Y el `accent-3` del commit anterior. Los dos
+salieron de la auditoría automática, no de mirar la pantalla.
+
+### Lo que sigue faltando
+
+- **Core como pareja A/B alternante.** La rutina alterna dos parejas de
+  ejercicios entre días de core, y no hay forma de expresarlo.
+- **RIR global.** *"Reps en reserva: 1"* es una regla de toda la rutina; hoy
+  el RPE es por serie y no se usa.
 
 ---
 

@@ -195,7 +195,9 @@ function EntryCard({
             )}
             <p className="text-sm text-muted mt-1 num">
               {entry.target
-                ? `${entry.target.targetSets} × ${entry.target.repRangeMin}-${entry.target.repRangeMax} · ${restLabel(entry.target.restSeconds)}`
+                ? `${entry.target.targetSets} × ${entry.target.repRangeMin}-${entry.target.repRangeMax}${
+                    entry.target.perSide ? ' por lado' : ''
+                  } · ${restLabel(entry.target.restSeconds)}`
                 : 'sin objetivo'}
             </p>
           </div>
@@ -513,6 +515,7 @@ function SetLogger({ sessionId, entryIndex, entry, exercise, openingWeight }) {
         <div className={sinCarga ? 'flex-1' : 'w-full min-[360px]:w-[46%]'}>
           <span className="block label-hud text-[10px] text-muted mb-1.5">
             {exercise?.loadType === 'time' ? 'Segundos' : 'Reps'}
+            {entry.target?.perSide ? ' por lado' : ''}
           </span>
           <div className="flex items-stretch gap-1">
             <button

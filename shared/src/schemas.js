@@ -44,6 +44,11 @@ export const routineSlotSchema = z
     repRangeMin: z.number().int().min(1).max(100),
     repRangeMax: z.number().int().min(1).max(100),
     restSeconds: z.number().int().min(0).max(600),
+    // Unilateral: "plancha lateral, 2 x 30-45 seg POR LADO". Sin esto hay que
+    // anotar la mitad o el doble y el historial queda mintiendo. Es un flag
+    // del slot y no del ejercicio porque el mismo ejercicio se hace de las dos
+    // formas segun el dia.
+    perSide: z.boolean().default(false),
     note: z.string().max(300).default(''),
   })
   .refine((s) => s.repRangeMin <= s.repRangeMax, {
@@ -107,6 +112,7 @@ export const sessionEntrySchema = z.object({
       repRangeMin: z.number().int().min(1).max(100),
       repRangeMax: z.number().int().min(1).max(100),
       restSeconds: z.number().int().min(0).max(600),
+      perSide: z.boolean().default(false),
       note: z.string().max(300).default(''),
     })
     .nullable()
@@ -131,11 +137,40 @@ export const sessionSchema = z.object({
   clientUpdatedAt: isoDate,
 });
 
+// Una medida con cinta, en centimetros. El rango es ancho a proposito: sirve
+// igual para un brazo de 28 y para un pecho de 120, y apretarlo solo lograria
+// rechazar a alguien real por estar fuera de una tabla promedio.
+const cm = z.number().min(10).max(300);
+
+// Medidas corporales. Todas opcionales y por separado: se miden una vez por
+// mes, no en cada pesaje, y es normal anotar solo algunas.
+export const measurementsSchema = z.object({
+  shoulders: cm.nullable().default(null),
+  chest: cm.nullable().default(null),
+  arm: cm.nullable().default(null),
+  waist: cm.nullable().default(null),
+});
+
+/** Alguna medida cargada. `{}` y todo en null son lo mismo: no hay medidas. */
+export function hasMeasurements(m) {
+  return Boolean(m) && Object.values(m).some((v) => v != null);
+}
+
+// Pesaje. Lleva las medidas adentro y no en una coleccion aparte porque en la
+// planilla de papel van en la misma fila: una fecha, un peso, y las medidas si
+// ese dia tocaba medirse. Separarlas obligaria a cruzar dos series por fecha
+// para mostrar lo que es una sola lectura del cuerpo.
+//
+// El peso sigue siendo obligatorio: no existe el caso de medirse sin pesarse,
+// y hacerlo opcional abriria filas vacias sin nada que mostrar.
 export const bodyweightEntrySchema = z.object({
   _id: idSchema,
   ownerId: idSchema,
   date: isoDate,
   kg: z.number().min(20).max(400),
+  // `.default({})` hace que los pesajes viejos, que no tienen el campo, sigan
+  // parseando sin migracion: entran con las cuatro medidas en null.
+  measurements: measurementsSchema.default({}),
   syncState: z.enum(['local', 'synced']).default('local'),
   clientUpdatedAt: isoDate,
 });

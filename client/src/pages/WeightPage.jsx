@@ -1,10 +1,15 @@
 import { useMemo, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { bodyweightTrend } from '@gym/shared';
+import {
+  MEASUREMENTS,
+  MEASUREMENT_LABELS,
+  bodyweightTrend,
+  hasMeasurements,
+} from '@gym/shared';
 import { deleteBodyweight, listBodyweight, logBodyweight } from '../db/trackingRepo.js';
 import { Button, Card, EmptyState, Field, Input, PageTitle, SectionLabel } from '../ui/primitives.jsx';
 import Sheet from '../ui/Sheet.jsx';
-import { relativeDate, shortDate, kg } from '../lib/format.js';
+import { relativeDate, shortDate, kg, cm } from '../lib/format.js';
 
 const TREND_LABEL = {
   subiendo: 'Subiendo',
@@ -17,10 +22,22 @@ export default function WeightPage() {
   const entries = useLiveQuery(() => listBodyweight({ limit: 120 }), [], null);
   const [open, setOpen] = useState(false);
   const [value, setValue] = useState('');
+  // Plegado por defecto: las medidas son una vez por mes y el pesaje es
+  // semanal. Mostrar cuatro campos vacios en cada anotada es pedirle al
+  // usuario que los ignore doce veces por cada vez que los usa.
+  const [conMedidas, setConMedidas] = useState(false);
+  const [medidas, setMedidas] = useState({});
 
   const trend = useMemo(() => bodyweightTrend(entries ?? []), [entries]);
 
   if (entries === null) return null;
+
+  // Los dos ultimos pesajes que trajeron medidas. El delta entre ellos es lo
+  // que realmente contesta "¿estoy creciendo?", que es la pregunta de fondo:
+  // el propio plan dice que la balanza es mala herramienta con este objetivo.
+  const conCinta = entries.filter((e) => hasMeasurements(e.measurements));
+  const ultimaMedida = conCinta[0] ?? null;
+  const previaMedida = conCinta[1] ?? null;
 
   const pesos = entries.map((e) => e.kg);
   const min = Math.min(...pesos, Infinity);
@@ -54,6 +71,36 @@ export default function WeightPage() {
               }
             />
           </div>
+
+          {ultimaMedida && (
+            <Card className="p-4">
+              <SectionLabel>Medidas · {relativeDate(ultimaMedida.date)}</SectionLabel>
+              <div className="grid grid-cols-2 gap-2.5">
+                {MEASUREMENTS.filter((k) => ultimaMedida.measurements?.[k] != null).map((k) => {
+                  const actual = ultimaMedida.measurements[k];
+                  const antes = previaMedida?.measurements?.[k] ?? null;
+                  const delta = antes == null ? null : Number((actual - antes).toFixed(1));
+                  return (
+                    <div key={k} className="bg-surface-2 border border-line chamfer-sm p-2.5">
+                      <p className="label-hud text-[9px] text-muted">{MEASUREMENT_LABELS[k]}</p>
+                      <p className="num font-bold mt-1">
+                        {cm(actual)}
+                        <span className="text-muted text-xs font-normal"> cm</span>
+                      </p>
+                      {/* El delta lleva signo y flecha: el color solo no
+                          alcanza para decir si subio o bajo. */}
+                      {delta != null && delta !== 0 && (
+                        <p className={`num text-[11px] mt-0.5 ${delta > 0 ? 'text-ok' : 'text-warn'}`}>
+                          {delta > 0 ? '▲ +' : '▼ '}
+                          {cm(Math.abs(delta))} cm
+                        </p>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </Card>
+          )}
 
           <Card tone="cyan" className="p-4 space-y-2.5">
             <SectionLabel>Serie</SectionLabel>
@@ -90,6 +137,9 @@ export default function WeightPage() {
                     </p>
                     <p className="label-hud text-[10px] text-muted mt-0.5">
                       {relativeDate(e.date)}
+                      {hasMeasurements(e.measurements) && (
+                        <span className="text-accent-2"> · con cinta</span>
+                      )}
                     </p>
                   </div>
                   <button
@@ -112,8 +162,10 @@ export default function WeightPage() {
           onSubmit={async (e) => {
             e.preventDefault();
             if (!Number(value)) return;
-            await logBodyweight({ kg: Number(value) });
+            await logBodyweight({ kg: Number(value), measurements: medidas });
             setValue('');
+            setMedidas({});
+            setConMedidas(false);
             setOpen(false);
           }}
         >
@@ -128,6 +180,38 @@ export default function WeightPage() {
               placeholder="80,5"
             />
           </Field>
+          {/* Divulgacion progresiva: el boton abre los cuatro campos solo el
+              dia que toca medirse. */}
+          {conMedidas ? (
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                {MEASUREMENTS.map((k) => (
+                  <Field key={k} label={`${MEASUREMENT_LABELS[k]} (cm)`}>
+                    <Input
+                      type="number"
+                      inputMode="decimal"
+                      step="0.5"
+                      value={medidas[k] ?? ''}
+                      onChange={(e) => setMedidas({ ...medidas, [k]: e.target.value })}
+                    />
+                  </Field>
+                ))}
+              </div>
+              <p className="text-sm text-muted">
+                Dejá vacío lo que no midas. Misma cinta, mismo punto, sin apretar.
+              </p>
+            </div>
+          ) : (
+            <Button
+              type="button"
+              variant="cyan"
+              className="w-full"
+              onClick={() => setConMedidas(true)}
+            >
+              + Sumar medidas con cinta
+            </Button>
+          )}
+
           <Button type="submit" className="w-full" disabled={!Number(value)}>
             Guardar
           </Button>

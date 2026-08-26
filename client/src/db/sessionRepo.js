@@ -76,6 +76,7 @@ export async function startSession({ routineId = null, dayKey = null } = {}) {
         repRangeMin: slot.repRangeMin,
         repRangeMax: slot.repRangeMax,
         restSeconds: slot.restSeconds,
+        perSide: slot.perSide ?? false,
         note: slot.note ?? '',
       },
       sets: [],
