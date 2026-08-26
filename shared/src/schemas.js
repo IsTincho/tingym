@@ -29,6 +29,17 @@ export const exerciseSchema = z.object({
 export const routineSlotSchema = z
   .object({
     exerciseId: idSchema,
+    // Alternativas declaradas de antemano: el "Dominadas o jalon al pecho" que
+    // toda rutina real tiene escrito y que hasta ahora no se podia expresar.
+    //
+    // No es lo mismo que `substitutedFor`, que es reactivo: eso registra que
+    // cambiaste sobre la marcha, y para elegir el reemplazo hay que buscar
+    // entre los 48 del catalogo con el dedo transpirado. Esto es el plan: las
+    // dos o tres opciones que YA sabias que servian, a un tap.
+    //
+    // Tope de 4 porque una lista mas larga deja de ser un plan y vuelve a ser
+    // un buscador, que es justo lo que se esta evitando.
+    alternativeIds: z.array(idSchema).max(4).default([]),
     targetSets: z.number().int().min(1).max(12),
     repRangeMin: z.number().int().min(1).max(100),
     repRangeMax: z.number().int().min(1).max(100),
@@ -38,6 +49,14 @@ export const routineSlotSchema = z
   .refine((s) => s.repRangeMin <= s.repRangeMax, {
     message: 'El piso del rango no puede ser mayor al techo',
     path: ['repRangeMax'],
+  })
+  .refine((s) => !s.alternativeIds.includes(s.exerciseId), {
+    message: 'El ejercicio principal no puede estar también como alternativa',
+    path: ['alternativeIds'],
+  })
+  .refine((s) => new Set(s.alternativeIds).size === s.alternativeIds.length, {
+    message: 'Hay una alternativa repetida',
+    path: ['alternativeIds'],
   });
 
 export const routineDaySchema = z.object({
@@ -92,6 +111,10 @@ export const sessionEntrySchema = z.object({
     })
     .nullable()
     .default(null),
+  // Copiadas del slot al arrancar, igual que el target y por la misma razon:
+  // si mañana editas la rutina, la sesion que estas entrenando no cambia abajo
+  // de los pies. Ademas la deja funcionando sin red, que es el caso normal.
+  alternativeIds: z.array(idSchema).max(4).default([]),
   sets: z.array(setSchema).default([]),
   aiVerdict: aiVerdictSchema.nullable().default(null),
 });

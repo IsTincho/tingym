@@ -68,6 +68,9 @@ export async function startSession({ routineId = null, dayKey = null } = {}) {
     entries = (day?.slots ?? []).map((slot) => ({
       exerciseId: slot.exerciseId,
       substitutedFor: null,
+      // Se copian junto con el target y por la misma razon: la sesion en curso
+      // no cambia si mañana editas la rutina. Y quedan disponibles sin red.
+      alternativeIds: slot.alternativeIds ?? [],
       target: {
         targetSets: slot.targetSets,
         repRangeMin: slot.repRangeMin,
@@ -163,6 +166,8 @@ export function addEntry(sessionId, exerciseId, target = null) {
       exerciseId,
       substitutedFor: null,
       target,
+      // Un ejercicio suelto no viene de un slot, asi que no trae alternativas.
+      alternativeIds: [],
       sets: [],
       aiVerdict: null,
     });

@@ -460,6 +460,68 @@ red y el Worker no tiene `process.env`.
 
 ---
 
+## 7. Pasada de UX sobre la rutina real — 25/8/2026
+
+`rutina-4-dias.md` se leyó como especificación, no como dato. Dos cosas que la
+rutina escrita a mano hacía y la app no podía expresar:
+
+### Cronómetro de descanso
+
+El `restSeconds` ya estaba en el modelo y se mostraba (`2:30 descanso`), pero
+nunca corría: había que contar con el reloj del celular, teniendo la rutina la
+regla escrita ("2-3 min en los pesados, 60-90 seg en los livianos").
+
+Arranca solo al anotar la serie. El estado es un **instante de fin**, no un
+contador que baja: un `setInterval` se congela al bloquear la pantalla y volvés
+a los dos minutos con el reloj en quince segundos. Verificado recargando a
+mitad de un descanso — faltaban 130 s, tras la recarga marcaba 115 s, mismo
+`finishAt`.
+
+Vibra una sola vez al llegar a cero y sigue contando hacia arriba. Vibrar es el
+único aviso que sirve con el teléfono en el bolsillo: un sonido molesta al
+gimnasio y una push necesita servidor y permiso.
+
+Vive en `localStorage` y no en Dexie: es el estado de un cronómetro, no un dato
+del entrenamiento. Se descarta solo si tiene más de una hora.
+
+### Alternativas por slot
+
+La rutina tiene **ocho** slots con "X o Y" —*Dominadas o jalón al pecho*,
+*Sentadilla o prensa*, *Press cerrado o fondos*— y el modelo tenía un solo
+`exerciseId`. Cambiar era abrir el buscador y filtrar 48 ejercicios con la mano
+sudada. Ahora se declaran en la rutina y en la sesión aparecen como botones: un
+tap.
+
+No reemplaza a `substitutedFor`, que sigue siendo el registro reactivo de que
+cambiaste. Esto es el **plan**; aquello es el **hecho**. Y cuando cambiás, el
+original pasa a ser una opción más: volver atrás cuesta lo mismo que haber ido.
+
+Tope de cuatro, porque una lista más larga deja de ser un plan y vuelve a ser
+un buscador.
+
+### `accent-3` no pasaba contraste
+
+La auditoría encontró el magenta `#c026d3` en 4.09 sobre `surface`, contra los
+4.5 de AA. Se usaba como texto en dos lugares (la marca de "en lugar de" y el
+veredicto `revisar_tecnica`), así que se corrigió el token y no los dos usos.
+`#d946ef` da 5.17 en el peor fondo.
+
+Se le escapó a la pasada de contraste anterior porque esa buscó modificadores
+de opacidad, y este color fallaba al 100 %.
+
+### Lo que sigue faltando de la rutina
+
+- **Medidas corporales.** El doc tiene tabla de hombros/pecho/brazo/cintura y
+  dice explícitamente que *"la balanza es mala herramienta con tu objetivo"*.
+  La pantalla Peso sólo guarda kg.
+- **"Por lado".** `2 x 30-45 seg por lado` no se puede expresar: se anota la
+  mitad o el doble.
+- **Core como pareja A/B alternante.**
+- **Iconos en la navegación.** Hoy son cinco etiquetas de texto. La regla
+  `nav-label-icon` pide icono + texto; SVG, nunca emoji.
+
+---
+
 ## 5. Para decidir mañana
 
 - [x] ~~¿El parseo de comida va por Anthropic o se mete FatSecret?~~

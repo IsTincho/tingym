@@ -121,6 +121,11 @@ export default function RoutineEditPage() {
                       {slot.targetSets} × {slot.repRangeMin}-{slot.repRangeMax} ·{' '}
                       {restLabel(slot.restSeconds)} descanso
                     </p>
+                    {(slot.alternativeIds ?? []).length > 0 && (
+                      <p className="text-sm text-accent-2 mt-1 truncate">
+                        o {slot.alternativeIds.map((id) => byId.get(id)?.name).filter(Boolean).join(' · ')}
+                      </p>
+                    )}
                     {slot.note && (
                       <p className="text-sm text-muted mt-1.5 border-l-2 border-accent-3/50 pl-2.5">
                         {slot.note}
@@ -195,7 +200,13 @@ export default function RoutineEditPage() {
         exercises={exercises}
         onClose={() => setSheet(null)}
       />
-      <SlotSheet sheet={sheet} routine={routine} byId={byId} onClose={() => setSheet(null)} />
+      <SlotSheet
+        sheet={sheet}
+        routine={routine}
+        byId={byId}
+        exercises={exercises}
+        onClose={() => setSheet(null)}
+      />
     </div>
   );
 }
@@ -288,17 +299,19 @@ function PickerSheet({ sheet, routineId, exercises, onClose }) {
   );
 }
 
-function SlotSheet({ sheet, routine, byId, onClose }) {
+function SlotSheet({ sheet, routine, byId, exercises, onClose }) {
   const open = sheet?.type === 'slot';
   const slot = open
     ? routine.days.find((d) => d.key === sheet.dayKey)?.slots[sheet.index]
     : null;
   const [draft, setDraft] = useState(null);
   const [seededFor, setSeededFor] = useState(null);
+  const [buscar, setBuscar] = useState('');
 
   if (open && slot && seededFor !== sheet) {
     setSeededFor(sheet);
-    setDraft({ ...slot });
+    setDraft({ alternativeIds: [], ...slot });
+    setBuscar('');
   }
 
   if (!open || !slot || !draft) return null;
@@ -318,6 +331,7 @@ function SlotSheet({ sheet, routine, byId, onClose }) {
       repRangeMax: Math.max(min, max),
       restSeconds: Number(draft.restSeconds) || 0,
       note: draft.note ?? '',
+      alternativeIds: draft.alternativeIds ?? [],
     });
     onClose();
   }
@@ -368,6 +382,83 @@ function SlotSheet({ sheet, routine, byId, onClose }) {
             onChange={(e) => setDraft({ ...draft, note: e.target.value })}
           />
         </Field>
+
+        {/* Alternativas: el "o" de la rutina escrita. Durante la sesión
+            aparecen como botones al lado del ejercicio, así cambiar cuesta un
+            tap en vez de buscar entre los 48 del catálogo con la mano sudada. */}
+        <div>
+          <span className="block label-hud text-[11px] text-muted mb-2">
+            Alternativas
+          </span>
+          {(draft.alternativeIds ?? []).length > 0 && (
+            <div className="flex flex-wrap gap-2 mb-2.5">
+              {draft.alternativeIds.map((id) => (
+                <button
+                  key={id}
+                  type="button"
+                  className="min-h-11 pl-3 pr-2 chamfer-sm bg-surface-2 border border-accent-2/40
+                             font-display text-sm text-accent-2 flex items-center gap-2
+                             active:border-danger active:text-danger transition-colors"
+                  onClick={() =>
+                    setDraft({
+                      ...draft,
+                      alternativeIds: draft.alternativeIds.filter((x) => x !== id),
+                    })
+                  }
+                  aria-label={`Sacar ${byId.get(id)?.name ?? 'alternativa'}`}
+                >
+                  {byId.get(id)?.name ?? 'Ejercicio borrado'}
+                  <span aria-hidden className="text-base leading-none">✕</span>
+                </button>
+              ))}
+            </div>
+          )}
+
+          {(draft.alternativeIds ?? []).length >= 4 ? (
+            <p className="text-sm text-muted">
+              Cuatro es el tope. Más que eso vuelve a ser un buscador.
+            </p>
+          ) : (
+            <>
+              <Input
+                value={buscar}
+                onChange={(e) => setBuscar(e.target.value)}
+                placeholder="Buscar para agregar…"
+              />
+              {buscar.trim() && (
+                <ul className="mt-2 max-h-52 overflow-y-auto space-y-1.5">
+                  {exercises
+                    .filter(
+                      (e) =>
+                        e._id !== draft.exerciseId &&
+                        !(draft.alternativeIds ?? []).includes(e._id) &&
+                        e.name.toLowerCase().includes(buscar.trim().toLowerCase()),
+                    )
+                    .slice(0, 8)
+                    .map((e) => (
+                      <li key={e._id}>
+                        <button
+                          type="button"
+                          className="w-full text-left min-h-12 px-3 chamfer-sm bg-surface-2
+                                     border border-line font-display text-sm
+                                     active:border-accent-2 active:text-accent-2 transition-colors"
+                          onClick={() => {
+                            setDraft({
+                              ...draft,
+                              alternativeIds: [...(draft.alternativeIds ?? []), e._id],
+                            });
+                            setBuscar('');
+                          }}
+                        >
+                          {e.name}
+                        </button>
+                      </li>
+                    ))}
+                </ul>
+              )}
+            </>
+          )}
+        </div>
 
         <div className="flex gap-2">
           <Button type="submit" className="flex-1">

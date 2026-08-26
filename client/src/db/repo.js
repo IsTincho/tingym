@@ -166,6 +166,7 @@ export function addSlot(routineId, dayKey, slot) {
       repRangeMax: 8,
       restSeconds: 120,
       note: '',
+      alternativeIds: [],
       ...slot,
     });
     return r;

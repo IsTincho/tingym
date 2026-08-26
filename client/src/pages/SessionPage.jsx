@@ -83,7 +83,9 @@ export default function SessionPage() {
             index={i}
             sessionId={session._id}
             exercise={byId.get(entry.exerciseId)}
+            byId={byId}
             replaced={entry.substitutedFor ? byId.get(entry.substitutedFor) : null}
+            onSwap={(exId) => substituteEntry(session._id, i, exId)}
             expanded={open === i}
             onToggle={() => setOpen(open === i ? -1 : i)}
             onSubstitute={() => setSheet({ type: 'sub', index: i })}
@@ -137,10 +139,12 @@ function EntryCard({
   index,
   sessionId,
   exercise,
+  byId,
   replaced,
   expanded,
   onToggle,
   onSubstitute,
+  onSwap,
   onRemove,
 }) {
   const [briefing, setBriefing] = useState(null);
@@ -280,6 +284,43 @@ function EntryCard({
               )}
             </>
           )}
+
+          {/* Alternativas del plan: el "Dominadas o jalon al pecho" que ya
+              estaba decidido, a un tap. El buscador completo sigue abajo para
+              lo que no estaba previsto —maquina rota, algo que se te ocurre—,
+              pero deja de ser el camino normal.
+
+              Si ya cambiaste, el original aparece como una opcion mas: volver
+              atras tiene que costar lo mismo que haber ido. */}
+          {(() => {
+            const opciones = [
+              ...(entry.alternativeIds ?? []),
+              ...(entry.substitutedFor ? [entry.substitutedFor] : []),
+            ]
+              .filter((id) => id !== entry.exerciseId)
+              .filter((id, i, a) => a.indexOf(id) === i)
+              .map((id) => byId?.get(id))
+              .filter(Boolean);
+            if (!opciones.length) return null;
+            return (
+              <div>
+                <p className="label-hud text-[9px] text-muted mb-1.5">o hacé</p>
+                <div className="flex flex-wrap gap-2">
+                  {opciones.map((alt) => (
+                    <button
+                      key={alt._id}
+                      onClick={() => onSwap(alt._id)}
+                      className="min-h-11 px-3 chamfer-sm bg-surface-2 border border-accent-2/40
+                                 font-display text-sm text-accent-2 text-left
+                                 active:bg-accent-2 active:text-ink transition-colors"
+                    >
+                      {alt.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            );
+          })()}
 
           <div className="flex gap-2">
             <Button variant="secondary" className="flex-1" onClick={onSubstitute}>

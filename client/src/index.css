@@ -49,7 +49,11 @@
   --color-accent: #ff2a4a;
   --color-accent-soft: #ff6b7f;
   --color-accent-2: #00e5ff;
-  --color-accent-3: #c026d3;
+  /* Magenta aclarado desde #c026d3, que como texto daba 4.09 sobre `surface`
+     y no llegaba a los 4.5 de AA. Se usa como texto en dos lugares —la marca
+     de "en lugar de" y el veredicto revisar_tecnica—, asi que se corrige el
+     token en vez de parchear los dos. Este da 5.17 en el peor fondo. */
+  --color-accent-3: #d946ef;
   --color-ok: #39ff8a;
   --color-warn: #ffb020;
   --color-danger: #ff2a4a;
