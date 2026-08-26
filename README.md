@@ -85,6 +85,35 @@ vieja pegada a un ejercicio que ya no es ese. Un ejercicio sin equivalente va
 como `null` explícito y se queda sin foto, que es preferible a una foto
 parecida-pero-no.
 
+## Copia de seguridad
+
+La app es local-first sin cuenta obligatoria: si no sincronizás, **todo vive en
+el IndexedDB de un navegador**. Un "borrar datos de sitio", un teléfono nuevo o
+una PWA desinstalada y no queda nada.
+
+Cuenta → Copia de seguridad exporta un JSON con rutinas, sesiones, pesajes y
+comidas, e importa de vuelta. El catálogo global de 48 ejercicios no viaja: se
+siembra solo en cada dispositivo.
+
+El import valida documento por documento con el mismo Zod que usa el servidor y
+devuelve lo que rechazó en vez de fallar entero — un backup con una fila rota
+tiene que poder importar las otras doscientas. Reescribe `ownerId` al usuario
+local, así que un backup de otro dispositivo entra sin quedar invisible.
+
+**Ojo al escribir sesiones sin pasar por `sessionRepo`:** el índice
+`exerciseIds` está denormalizado y no es parte del esquema, así que Zod lo
+descarta. Sin recalcularlo con `withIndex()`, las sesiones entran invisibles
+para "la última vez que hiciste este ejercicio". Pasó con el import.
+
+```bash
+node scripts/generar-backup-rutina.mjs > mi-backup.json
+```
+
+Convierte `rutina-4-dias.md` en un backup importable. Está escrito a mano y no
+parsea el markdown: la tabla de pesos es prosa ("polea 40 kg · 4x12 ✓ techo →
+subir a 45") y un parser que la entienda sería más frágil y más largo que
+transcribirla una vez.
+
 ## Deploy
 
 El frontend lo despliega **Cloudflare Pages** solo, en cada push a `main`:

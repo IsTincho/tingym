@@ -86,6 +86,11 @@ export const routineSchema = z.object({
 export const setSchema = z.object({
   weightKg: z.number().min(0).max(1000).nullable(), // null si bodyweight
   reps: z.number().int().min(0).max(1000),
+  // Sin uso deliberado: no se captura en la interfaz, no lo lee el motor y no
+  // se muestra. Se evaluo agregar RIR o RPE por serie y se descarto —un tap
+  // mas por serie con la mano sudada no se paga, y el rango de reps ya dice
+  // bastante. Queda el campo porque sacarlo obliga a tocar el sync y los
+  // documentos ya guardados en Mongo, para no ganar nada.
   rpe: z.number().min(1).max(10).nullable().default(null),
   failed: z.boolean().default(false),
   // Calentamiento. Se registra pero NO cuenta como serie de trabajo: no entra

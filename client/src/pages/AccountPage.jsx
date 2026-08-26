@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { getMeta } from '../db/db.js';
 import { changePassword, clearSession, getToken, login, register, sync } from '../db/sync.js';
 import { BackLink, Button, Card, Field, Input, PageTitle } from '../ui/primitives.jsx';
+import BackupPanel from '../ui/BackupPanel.jsx';
 import { relativeDate } from '../lib/format.js';
 
 function PasswordForm() {
@@ -238,6 +239,10 @@ export default function AccountPage() {
             </form>
           </>
         )}
+
+        {/* Fuera del if/else de sesión iniciada: hacer backup es MÁS urgente
+            sin cuenta, no menos —sin sync este navegador es la única copia. */}
+        <BackupPanel />
       </div>
     </div>
   );

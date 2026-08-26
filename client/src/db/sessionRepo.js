@@ -11,7 +11,11 @@ import {
 // El indice *exerciseIds vive denormalizado en el documento: se recalcula en
 // cada guardado para que "ultima sesion de este ejercicio" sea una lectura
 // por indice y no un scan de todas las sesiones.
-function withIndex(session) {
+//
+// Se exporta porque cualquiera que escriba sesiones sin pasar por `persist`
+// —el import de un backup, por ejemplo— tiene que recalcularlo o las sesiones
+// entran invisibles para el historial. Paso exactamente eso.
+export function withIndex(session) {
   return {
     ...session,
     exerciseIds: [
@@ -226,13 +230,26 @@ export async function exerciseHistory(exerciseId, { limit = 10, excludeSessionId
     .sort((a, b) => b.date.localeCompare(a.date))
     .slice(0, limit)
     .map((s) => {
-      const entry = s.entries.find((e) => e.exerciseId === exerciseId);
+      // La entrada se busca por el ejercicio hecho O por el que reemplazo. El
+      // indice ya matchea las dos cosas, y buscar solo por `exerciseId` hacia
+      // que un dia sustituido apareciera como "ultima vez" sin una sola serie:
+      // encontraba la sesion y no la entrada.
+      //
+      // Se prefiere la coincidencia directa: si ese dia hiciste el ejercicio
+      // Y ademas otro lo reemplazo en otro slot, manda el que hiciste.
+      const entry =
+        s.entries.find((e) => e.exerciseId === exerciseId) ??
+        s.entries.find((e) => e.substitutedFor === exerciseId);
       return {
         sessionId: s._id,
         date: s.date,
         sets: entry?.sets ?? [],
         target: entry?.target ?? null,
         aiVerdict: entry?.aiVerdict ?? null,
+        // Que ejercicio se hizo realmente, cuando no fue el que se busco.
+        // Null si coinciden. Sin esto, "40 kg × 8" bajo el titulo "Dominadas"
+        // seria mentira: eso fue en la dorsalera.
+        doneAs: entry && entry.exerciseId !== exerciseId ? entry.exerciseId : null,
       };
     });
 }
@@ -248,20 +265,31 @@ export async function lastPerformance(exerciseId, { excludeSessionId = null } = 
  * veredicto determinista de esa ultima vez y el peso con el que arrancar hoy.
  */
 export async function exerciseBriefing(exerciseId, { target, loadType, excludeSessionId }) {
-  const last = await lastPerformance(exerciseId, { excludeSessionId });
+  const historia = await exerciseHistory(exerciseId, { limit: 10, excludeSessionId });
+  const last = historia[0] ?? null;
   if (!last) return { last: null, verdict: null, openingWeight: null };
-  const effectiveTarget = target ?? last.target;
+
+  // El veredicto y el peso de arranque salen SOLO de veces que hiciste este
+  // mismo ejercicio. Un dia que lo reemplazaste por otro sirve para mostrar
+  // que paso, pero no para decidir la carga: "la ultima vez 40 kg en la
+  // dorsalera" no dice nada sobre con cuanto arrancar unas dominadas.
+  const mismo = historia.find((h) => h.doneAs == null && h.sets.length > 0) ?? null;
+  if (!mismo) return { last, verdict: null, openingWeight: null };
+
+  const effectiveTarget = target ?? mismo.target;
   return {
     last,
     verdict: deterministicVerdict({
-      sets: last.sets,
+      sets: mismo.sets,
       target: effectiveTarget,
       loadType,
     }),
     openingWeight: suggestedOpeningWeight({
-      lastSets: last.sets,
+      lastSets: mismo.sets,
       target: effectiveTarget,
       loadType,
     }),
+    // La vez que se uso para calcular, cuando NO es la ultima que se muestra.
+    baseDistinta: mismo !== last ? mismo : null,
   };
 }

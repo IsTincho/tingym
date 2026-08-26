@@ -8,3 +8,7 @@ d1-dump.sql
 *.dump.sql
 atlas-credentials.env
 *credentials.env
+
+# Backups generados: son datos personales y se regeneran con el script.
+mi-rutina-backup.json
+tingym-*.json

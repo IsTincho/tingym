@@ -232,7 +232,7 @@ function EntryCard({
           )}
 
           {/* El bloque que hace que la app sirva: que hiciste la ultima vez. */}
-          <LastTime briefing={briefing} />
+          <LastTime briefing={briefing} byId={byId} />
 
           <SetLogger
             sessionId={sessionId}
@@ -427,7 +427,7 @@ function AnalyzeButton({ sessionId, entryIndex, entry, exercise, fallback }) {
   );
 }
 
-function LastTime({ briefing }) {
+function LastTime({ briefing, byId }) {
   if (!briefing) return null;
   if (!briefing.last) {
     return (
@@ -436,12 +436,24 @@ function LastTime({ briefing }) {
       </p>
     );
   }
+  // Si ese día lo reemplazaste, hay que decirlo: "40 kg × 8" bajo el título
+  // "Dominadas" sería mentira —eso fue en la dorsalera— y el número engaña
+  // justo cuando estás por elegir con cuánto arrancar.
+  const enLugar = briefing.last.doneAs ? byId?.get(briefing.last.doneAs) : null;
+  const base = briefing.baseDistinta;
   return (
     <div className="bg-surface-2 chamfer-sm p-3.5 border-l-2 border-accent-2/60">
       <p className="label-hud text-[10px] text-accent-2 text-glow-cyan">
         Última vez · {relativeDate(briefing.last.date)}
+        {enLugar && <span className="text-muted"> · {enLugar.name}</span>}
       </p>
       <p className="text-sm mt-1.5 num text-text/90">{setsLabel(briefing.last.sets)}</p>
+      {base && (
+        <p className="text-sm text-muted mt-1.5">
+          La sugerencia sale de {relativeDate(base.date)}, la última vez que lo
+          hiciste sin cambiarlo.
+        </p>
+      )}
       {briefing.verdict && (
         <div className="mt-2">
           <VerdictChip verdict={briefing.verdict} compact />
