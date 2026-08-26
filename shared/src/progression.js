@@ -28,9 +28,20 @@ export function weightStep(loadType, weightKg) {
   return step;
 }
 
-function workingSets(sets) {
-  // Una serie sin reps es un input a medio llenar, no un dato.
-  return (sets ?? []).filter((s) => s && Number(s.reps) > 0);
+/**
+ * Las series que cuentan.
+ *
+ * Deja afuera dos cosas distintas:
+ * - Sin reps: es un input a medio llenar, no un dato.
+ * - Calentamiento: se registro, pero no es trabajo. Si entrara, dos series
+ *   livianas antes de las de verdad correrian el primer valor del rango y el
+ *   motor leeria una caida que no existe.
+ *
+ * Todo lo que mide esfuerzo —volumen, peso tope, veredicto, series historicas—
+ * pasa por aca, asi que alcanza con filtrarlo en un solo lugar.
+ */
+export function workingSets(sets) {
+  return (sets ?? []).filter((s) => s && Number(s.reps) > 0 && !s.warmup);
 }
 
 export function topWeight(sets) {

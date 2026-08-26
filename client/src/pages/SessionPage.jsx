@@ -41,7 +41,11 @@ export default function SessionPage() {
   }
   if (!session || exercises === null) return null;
 
-  const hechas = session.entries.filter((e) => e.sets.some((s) => Number(s.reps) > 0)).length;
+  // Calentar no es haber hecho el ejercicio, ni para la barra de avance de la
+  // sesion ni para el contador de series de la tarjeta.
+  const hechas = session.entries.filter((e) =>
+    e.sets.some((s) => Number(s.reps) > 0 && !s.warmup),
+  ).length;
 
   return (
     <div>
@@ -148,7 +152,7 @@ function EntryCard({
   onRemove,
 }) {
   const [briefing, setBriefing] = useState(null);
-  const hechas = entry.sets.filter((s) => Number(s.reps) > 0);
+  const hechas = entry.sets.filter((s) => Number(s.reps) > 0 && !s.warmup);
 
   // El briefing (ultima vez + veredicto + peso de arranque) se lee una vez al
   // abrir la tarjeta: es historial cerrado, no cambia mientras entrenas.
@@ -243,14 +247,28 @@ function EntryCard({
               {entry.sets.map((s, i) => (
                 <li
                   key={i}
-                  className="flex items-center justify-between bg-surface-2 chamfer-sm px-3 py-2.5
-                             border-l-2 border-accent/40"
+                  // El filete cian distingue el calentamiento de un vistazo,
+                  // sin tener que leer la etiqueta.
+                  className={
+                    'flex items-center justify-between bg-surface-2 chamfer-sm px-3 py-2.5 border-l-2 ' +
+                    (s.warmup ? 'border-accent-2/60' : 'border-accent/40')
+                  }
                 >
                   <span className="text-sm num">
+                    {/* Las de calentamiento no llevan numero: numerarlas haria
+                        que la tercera de trabajo diga "05" y no cierre con el
+                        objetivo de la rutina. */}
                     <span className="text-muted mr-2.5">
-                      {String(i + 1).padStart(2, '0')}
+                      {s.warmup
+                        ? '··'
+                        : String(
+                            entry.sets.slice(0, i + 1).filter((x) => !x.warmup).length,
+                          ).padStart(2, '0')}
                     </span>
                     {setLabel(s)}
+                    {s.warmup && (
+                      <span className="label-hud text-[9px] text-accent-2 ml-2">calent.</span>
+                    )}
                     {s.failed && (
                       <span className="label-hud text-[9px] text-danger ml-2">fallo</span>
                     )}
@@ -446,6 +464,10 @@ function SetLogger({ sessionId, entryIndex, entry, exercise, openingWeight }) {
   const [weight, setWeight] = useState(pesoInicial);
   const [reps, setReps] = useState(repsIniciales);
   const [failed, setFailed] = useState(false);
+  // Arranca marcado si todavia no hay ninguna serie de trabajo Y la rutina
+  // pide calentar: la primera del dia casi siempre lo es, y desmarcarlo cuesta
+  // un tap igual que marcarlo.
+  const [warmup, setWarmup] = useState(false);
   const [seed, setSeed] = useState(`${pesoInicial}-${repsIniciales}`);
 
   // Al registrar una serie cambia lo que conviene proponer para la siguiente.
@@ -455,6 +477,7 @@ function SetLogger({ sessionId, entryIndex, entry, exercise, openingWeight }) {
     setWeight(pesoInicial);
     setReps(repsIniciales);
     setFailed(false);
+    setWarmup(false);
   }
 
   const step = exercise?.loadType === 'machine' ? 5 : 2.5;
@@ -466,15 +489,22 @@ function SetLogger({ sessionId, entryIndex, entry, exercise, openingWeight }) {
       weightKg: sinCarga ? null : Number(weight ?? 0),
       reps: Number(reps),
       failed,
+      warmup,
     });
     setFailed(false);
+    // El calentamiento no se pega: la serie que sigue es de trabajo salvo que
+    // se diga lo contrario. Dejarlo prendido haria que una sesion entera se
+    // registre como calentamiento sin que nadie lo note.
+    setWarmup(false);
     // El descanso arranca solo. Es el momento exacto en que empieza: pedirle
     // al usuario que ademas toque "iniciar" es pedirle un tap con la mano que
     // no tiene libre, justo cuando acaba de soltar la barra.
     //
     // Si la rutina no define descanso no se arranca nada: un cronometro que
     // aparece con un numero inventado es peor que ninguno.
-    if (entry.target?.restSeconds) {
+    // Despues de calentar no se descansa dos minutos: el cronometro es para
+    // las series de trabajo.
+    if (entry.target?.restSeconds && !warmup) {
       arrancar(entry.target.restSeconds, exercise?.name ?? '');
     }
   }
@@ -545,14 +575,36 @@ function SetLogger({ sessionId, entryIndex, entry, exercise, openingWeight }) {
 
       <div className="flex gap-2">
         <Button className="flex-1 min-h-14 text-base" onClick={registrar} disabled={!Number(reps)}>
-          + Serie {entry.sets.length + 1}
+          {warmup ? '+ Calentamiento' : `+ Serie ${entry.sets.filter((x) => !x.warmup).length + 1}`}
           {!sinCarga && weight ? ` · ${kg(Number(weight))} × ${reps}` : ''}
         </Button>
+        {/* Calentar y fallar son excluyentes: una serie de calentamiento no
+            se "falla". Marcar una apaga la otra en vez de dejar un estado que
+            no significa nada. */}
         <button
-          onClick={() => setFailed((f) => !f)}
+          onClick={() => {
+            setWarmup((w) => !w);
+            setFailed(false);
+          }}
+          aria-pressed={warmup}
+          className={
+            'min-h-14 px-3 chamfer-sm border label-hud text-[11px] shrink-0 ' +
+            'transition-[background-color,box-shadow,color] ' +
+            (warmup
+              ? 'bg-accent-2/20 text-accent-2 border-accent-2/60 glow-cyan'
+              : 'bg-surface-2 text-muted border-line')
+          }
+        >
+          Calent.
+        </button>
+        <button
+          onClick={() => {
+            setFailed((f) => !f);
+            setWarmup(false);
+          }}
           aria-pressed={failed}
           className={
-            'min-h-14 px-4 chamfer-sm border label-hud text-[11px] ' +
+            'min-h-14 px-3 chamfer-sm border label-hud text-[11px] shrink-0 ' +
             'transition-[background-color,box-shadow,color] ' +
             (failed
               ? 'bg-danger/20 text-danger border-danger/60 glow-red-soft'

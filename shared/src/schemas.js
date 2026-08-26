@@ -88,6 +88,14 @@ export const setSchema = z.object({
   reps: z.number().int().min(0).max(1000),
   rpe: z.number().min(1).max(10).nullable().default(null),
   failed: z.boolean().default(false),
+  // Calentamiento. Se registra pero NO cuenta como serie de trabajo: no entra
+  // en el volumen, ni en el peso tope, ni en el veredicto de progresion.
+  //
+  // Sin esto, dos series livianas antes de las de verdad corren el primer
+  // valor del rango y el motor lee una caida que no existe —o al reves, una
+  // subida— y recomienda mal. La regla de calentar esta escrita en toda rutina
+  // seria, asi que no es un caso de borde.
+  warmup: z.boolean().default(false),
   note: z.string().max(200).default(''),
   loggedAt: isoDate,
 });

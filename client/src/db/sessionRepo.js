@@ -99,9 +99,14 @@ export async function startSession({ routineId = null, dayKey = null } = {}) {
 
 export function finishSession(sessionId) {
   return mutate(sessionId, (s) => {
-    // Las entradas sin una sola serie no se entrenaron: guardarlas ensucia
-    // el historial y arruina el "ultima vez" del proximo dia.
-    s.entries = s.entries.filter((e) => e.sets.some((x) => Number(x.reps) > 0));
+    // Las entradas sin una sola serie de trabajo no se entrenaron: guardarlas
+    // ensucia el historial y arruina el "ultima vez" del proximo dia.
+    //
+    // El calentamiento no cuenta: si te preparaste para hacer press banca y al
+    // final no lo hiciste, no entrenaste press banca.
+    s.entries = s.entries.filter((e) =>
+      e.sets.some((x) => Number(x.reps) > 0 && !x.warmup),
+    );
     s.status = 'done';
     return s;
   });
@@ -129,11 +134,15 @@ export function logSet(sessionId, entryIndex, set) {
   return mutate(sessionId, (s) => {
     const entry = s.entries[entryIndex];
     if (!entry) throw new Error('Ejercicio inexistente en la sesión');
+    // Campo por campo y no un spread: lo que llega del formulario no se
+    // guarda crudo. La contra es que agregar un campo al esquema y olvidarse
+    // de esta lista lo hace desaparecer en silencio —paso con `warmup`.
     entry.sets.push({
       weightKg: set.weightKg ?? null,
       reps: Number(set.reps) || 0,
       rpe: set.rpe ?? null,
       failed: Boolean(set.failed),
+      warmup: Boolean(set.warmup),
       note: set.note ?? '',
       loggedAt: nowIso(),
     });

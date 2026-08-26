@@ -1,7 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { MEAL_SLOTS, MEAL_SLOT_LABELS } from '@gym/shared';
-import { deleteMeal, listMeals, logMeal } from '../db/trackingRepo.js';
+import {
+  deleteMeal,
+  getProteinTarget,
+  listMeals,
+  logMeal,
+  setProteinTarget,
+} from '../db/trackingRepo.js';
 import { isCoachEnabled, parseMeal } from '../db/sync.js';
 import { Button, Card, EmptyState, Field, Input, PageTitle, Select } from '../ui/primitives.jsx';
 import Sheet from '../ui/Sheet.jsx';
@@ -38,14 +44,23 @@ export default function MealsPage() {
   const [estimando, setEstimando] = useState(false);
   // { confidence } cuando salio bien, { error } cuando no. Nunca los dos.
   const [aviso, setAviso] = useState(null);
+  const [objetivo, setObjetivo] = useState(null);
+  const [editandoObjetivo, setEditandoObjetivo] = useState(false);
 
   useEffect(() => {
     let vivo = true;
     isCoachEnabled().then((ok) => vivo && setIaDisponible(ok));
+    getProteinTarget().then((v) => vivo && setObjetivo(v));
     return () => {
       vivo = false;
     };
   }, []);
+
+  async function guardarObjetivo(valor) {
+    await setProteinTarget(valor);
+    setObjetivo(await getProteinTarget());
+    setEditandoObjetivo(false);
+  }
 
   async function estimar() {
     setEstimando(true);
@@ -109,6 +124,51 @@ export default function MealsPage() {
         <Button onClick={abrir}>+ Anotar</Button>
       </header>
 
+      {/* Objetivo de proteína. Es lo único de esta pantalla que mira hacia
+          adelante: el resto es registro. Sin objetivo cargado no se muestra
+          ninguna barra —una barra contra un número inventado miente. */}
+      <div className="px-4 pb-3">
+        {editandoObjetivo || objetivo == null ? (
+          <Card tone="cyan" className="p-3.5">
+            <form
+              className="flex items-end gap-2"
+              onSubmit={(e) => {
+                e.preventDefault();
+                guardarObjetivo(new FormData(e.currentTarget).get('obj'));
+              }}
+            >
+              <div className="flex-1">
+                <label
+                  htmlFor="obj-prote"
+                  className="block label-hud text-[10px] text-muted mb-1.5"
+                >
+                  Objetivo diario de proteína (g)
+                </label>
+                <Input
+                  id="obj-prote"
+                  name="obj"
+                  type="number"
+                  inputMode="numeric"
+                  defaultValue={objetivo ?? ''}
+                  placeholder="120"
+                />
+              </div>
+              <Button type="submit" variant="cyan" className="shrink-0">
+                Fijar
+              </Button>
+            </form>
+          </Card>
+        ) : (
+          <button
+            onClick={() => setEditandoObjetivo(true)}
+            className="w-full min-h-11 text-left label-hud text-[10px] text-muted
+                       active:text-accent-2 transition-colors"
+          >
+            objetivo {objetivo} g de proteína por día · cambiar
+          </button>
+        )}
+      </div>
+
       {dias.length === 0 ? (
         <EmptyState
           title="Sin comidas registradas"
@@ -128,10 +188,16 @@ export default function MealsPage() {
                   <p className="num text-[11px] text-muted shrink-0">
                     {d.kcal != null ? `${d.kcal} kcal` : ''}
                     {d.kcal != null && d.proteinG != null ? ' · ' : ''}
-                    {d.proteinG != null ? `${Math.round(d.proteinG)} g prot` : ''}
+                    {d.proteinG != null
+                      ? `${Math.round(d.proteinG)}${objetivo ? `/${objetivo}` : ''} g prot`
+                      : ''}
                   </p>
                 )}
               </div>
+
+              {objetivo && d.proteinG != null && (
+                <ProteinBar gramos={d.proteinG} objetivo={objetivo} />
+              )}
               <ul className="space-y-2">
                 {d.items.map((m) => (
                   <li key={m._id}>
@@ -249,6 +315,38 @@ export default function MealsPage() {
           </Button>
         </form>
       </Sheet>
+    </div>
+  );
+}
+
+/**
+ * Barra de proteína del día contra el objetivo.
+ *
+ * Verde al llegar, no antes: el punto de un objetivo es saber si lo cumpliste,
+ * y una barra que se pone verde al 80 % vuelve difuso justo eso. Pasarse no se
+ * castiga —comer más proteína de la que apuntaste no es un error— así que
+ * arriba del 100 % se queda verde y el número lo dice.
+ */
+function ProteinBar({ gramos, objetivo }) {
+  const pct = Math.min(100, Math.round((gramos / objetivo) * 100));
+  const llego = gramos >= objetivo;
+  return (
+    <div className="flex items-center gap-2 mb-2">
+      <div className="flex-1 h-1.5 bg-surface-2 border border-line overflow-hidden">
+        <div
+          className={`h-full transition-[width] duration-500 ${
+            llego
+              ? 'bg-ok shadow-[0_0_8px_0_rgba(57,255,138,0.8)]'
+              : 'bg-accent-2 shadow-[0_0_8px_0_rgba(0,229,255,0.6)]'
+          }`}
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+      <span
+        className={`num text-[10px] w-9 text-right shrink-0 ${llego ? 'text-ok' : 'text-muted'}`}
+      >
+        {Math.round((gramos / objetivo) * 100)}%
+      </span>
     </div>
   );
 }

@@ -548,12 +548,58 @@ El título editable de la rutina medía **22 px** de alto: había que acertarle 
 la línea de texto para renombrar. Y el `accent-3` del commit anterior. Los dos
 salieron de la auditoría automática, no de mirar la pantalla.
 
+### Series de calentamiento — era un bug de corrección
+
+La rutina dice *"Calentamiento: 1-2 series livianas del primer ejercicio"*, y
+esas series entraban al motor de progresión como series de trabajo. No es
+cosmético: calentar con 40 kg × 12 antes de trabajar con 60 × 7 hacía que el
+motor viera la primera serie por encima del techo del rango y una caída de
+cinco reps hasta la última. **Dos señales falsas sobre una sesión normal.**
+
+Ahora `warmup` es un flag de la serie y `workingSets()` lo excluye. Todo lo que
+mide esfuerzo —volumen, peso tope, veredicto, serie histórica, barra de avance—
+pasa por ahí, así que alcanza con filtrarlo en un lugar.
+
+De paso se sacó la duplicación que había causado el problema: `insights.js`
+repetía el filtro `reps > 0` en tres lugares con su propia copia. Ahora los
+tres importan `workingSets`.
+
+**Dos bugs que sólo aparecieron probando en el navegador**, no en los tests:
+
+- `logSet` construye el objeto campo por campo y no incluía `warmup`, así que
+  el flag no se persistía nunca. Los tests unitarios pasaban porque probaban
+  las funciones puras, no la capa que guarda.
+- Los contadores de avance (`1/4` en la tarjeta y la barra de la sesión)
+  contaban el calentamiento como serie hecha.
+
+El calentamiento tampoco arranca el cronómetro de descanso: no se descansan dos
+minutos después de calentar. Y no consume número de serie —la primera de
+trabajo dice "Serie 1" aunque hayas calentado dos veces—, porque si dijera
+"Serie 3" no cerraría con el objetivo de la rutina.
+
+### Objetivo de proteína
+
+El plan dice *"Proteína: 110-125 g por día. **Es el punto que más define el
+resultado**"*. La app sumaba proteína por día pero no sabía contra qué, así que
+no podía contestar la única pregunta que importa: si llegaste.
+
+Barra por día contra el objetivo, verde sólo al llegar —una barra que se pone
+verde al 80 % vuelve difuso justo eso— y pasarse no se castiga. Sin objetivo
+cargado no se muestra ninguna barra: una barra contra un número inventado
+miente.
+
+Vive en `meta`, así que **no viaja en el sync**: en un teléfono nuevo hay que
+volver a cargarlo. Es un número; agregar una colección al sync para eso no se
+paga.
+
 ### Lo que sigue faltando
 
 - **Core como pareja A/B alternante.** La rutina alterna dos parejas de
-  ejercicios entre días de core, y no hay forma de expresarlo.
-- **RIR global.** *"Reps en reserva: 1"* es una regla de toda la rutina; hoy
-  el RPE es por serie y no se usa.
+  ejercicios entre días de core, y no hay forma de expresarlo. Es una pregunta
+  de modelo antes que de UI: ¿superserie, o rotación por sesión?
+- **RIR global.** *"Reps en reserva: 1"* es una regla de toda la rutina; hoy el
+  `rpe` es por serie y no se usa. Habría que decidir si el RIR lo reemplaza o
+  convive.
 
 ---
 

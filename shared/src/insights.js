@@ -1,4 +1,4 @@
-import { detectPlateau, totalVolume, estimated1rm } from './progression.js';
+import { detectPlateau, totalVolume, estimated1rm, workingSets } from './progression.js';
 
 // Analisis sobre el historial ya registrado. Igual que el motor de
 // progresion: funciones puras, sin red. Todo lo que la app "sugiere" sale de
@@ -54,7 +54,7 @@ export function aggregateSessions(sessions, period = 'week') {
     const b = buckets.get(key);
     b.sessions += 1;
     for (const e of s.entries) {
-      const done = e.sets.filter((x) => Number(x.reps) > 0);
+      const done = workingSets(e.sets);
       if (done.length === 0) continue;
       b.sets += done.length;
       b.volumeKg += totalVolume(done);
@@ -75,7 +75,7 @@ export function aggregateSessions(sessions, period = 'week') {
 export function exerciseSeries(history) {
   return (history ?? [])
     .map((h) => {
-      const done = h.sets.filter((s) => Number(s.reps) > 0);
+      const done = workingSets(h.sets);
       if (done.length === 0) return null;
       const withWeight = done.filter((s) => s.weightKg != null);
       const top = withWeight.length ? Math.max(...withWeight.map((s) => s.weightKg)) : null;
@@ -196,7 +196,7 @@ export function buildInsights({ sessions = [], bodyweight = [], exercisesById, n
       .reduce(
         (acc, s) =>
           acc +
-          s.entries.reduce((a, e) => a + totalVolume(e.sets.filter((x) => Number(x.reps) > 0)), 0),
+          s.entries.reduce((a, e) => a + totalVolume(workingSets(e.sets)), 0),
         0,
       );
 

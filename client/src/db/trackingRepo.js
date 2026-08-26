@@ -1,4 +1,4 @@
-import { db } from './db.js';
+import { db, getMeta, setMeta } from './db.js';
 import { getCurrentUserId } from './repo.js';
 import { bodyweightEntrySchema, mealSchema, newId, nowIso } from '@gym/shared';
 
@@ -98,4 +98,23 @@ export async function logMeal({ slot, description, kcal = null, proteinG = null,
 
 export function deleteMeal(id) {
   return db.meals.delete(id);
+}
+
+// Objetivo diario de proteina, en gramos. `null` = sin objetivo, y en ese caso
+// la pantalla de comidas no muestra ninguna barra: un objetivo inventado es
+// peor que ninguno.
+//
+// Vive en `meta` y no en una coleccion sincronizada: es una preferencia de una
+// sola linea. Ojo con eso —no viaja al servidor, asi que en un telefono nuevo
+// hay que volver a cargarlo. Es un numero, y agregar una coleccion al sync
+// para un numero no se paga.
+const CLAVE_PROTEINA = 'proteinTargetG';
+
+export function getProteinTarget() {
+  return getMeta(CLAVE_PROTEINA, null);
+}
+
+export function setProteinTarget(gramos) {
+  const n = Number(gramos);
+  return setMeta(CLAVE_PROTEINA, Number.isFinite(n) && n > 0 ? Math.round(n) : null);
 }
