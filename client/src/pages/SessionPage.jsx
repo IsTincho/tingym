@@ -18,6 +18,8 @@ import {
 import { isCoachEnabled, requestVerdict } from '../db/sync.js';
 import { Button, Card, EmptyState, Field, Input, PageTitle } from '../ui/primitives.jsx';
 import Sheet from '../ui/Sheet.jsx';
+import RestTimer from '../ui/RestTimer.jsx';
+import { arrancar } from '../lib/restTimer.js';
 import VerdictChip from '../ui/VerdictChip.jsx';
 import { relativeDate, restLabel, setLabel, setsLabel, kg } from '../lib/format.js';
 
@@ -97,8 +99,10 @@ export default function SessionPage() {
           + Agregar ejercicio suelto
         </Button>
 
+        {/* pb extra: la barra de descanso es fija y taparia el boton de
+            terminar, que es justo el que buscas al final de la sesion. */}
         <Button
-          className="w-full min-h-16 text-base"
+          className="w-full min-h-16 text-base mb-24"
           onClick={async () => {
             if (hechas === 0) {
               if (!confirm('No registraste ninguna serie. ¿Terminar igual?')) return;
@@ -122,6 +126,8 @@ export default function SessionPage() {
           setSheet(null);
         }}
       />
+
+      <RestTimer />
     </div>
   );
 }
@@ -419,6 +425,15 @@ function SetLogger({ sessionId, entryIndex, entry, exercise, openingWeight }) {
       failed,
     });
     setFailed(false);
+    // El descanso arranca solo. Es el momento exacto en que empieza: pedirle
+    // al usuario que ademas toque "iniciar" es pedirle un tap con la mano que
+    // no tiene libre, justo cuando acaba de soltar la barra.
+    //
+    // Si la rutina no define descanso no se arranca nada: un cronometro que
+    // aparece con un numero inventado es peor que ninguno.
+    if (entry.target?.restSeconds) {
+      arrancar(entry.target.restSeconds, exercise?.name ?? '');
+    }
   }
 
   return (

@@ -34,14 +34,14 @@
 | 6 | Face pull | 3 x 15 | 18/08 · 20 kg · 4x12 (peso de más, reps cortas)<br>24/08 · **15 kg** · 20 reps ✓ |
 
 
-**Core (al final, no como calentamiento)**
+**Core (al final)** — 2 ejercicios, 2 series. Alterná pareja A y B en cada día de core.
 
-| Ejercicio | Series x reps |
-|-----------|---------------|
-| Plancha lateral | 3 x 30-45 seg por lado |
-| Plancha lateral con elevación de cadera | 3 x 10-12 por lado |
-| Hollow hold (piernas levantadas boca arriba) | 3 x 20-30 seg |
-| Plancha con toque de hombros | 3 x 16 toques |
+| Pareja | Ejercicio | Series |
+|--------|-----------|--------|
+| **A** | Plancha lateral | 2 x 30-45 seg por lado |
+| **A** | Plancha con toque de hombros | 2 x 16 toques |
+| **B** | Hollow hold | 2 x 20-30 seg |
+| **B** | Plancha lateral con elevación de cadera | 2 x 10-12 por lado |
 
 ---
 
@@ -49,22 +49,22 @@
 
 | # | Ejercicio | Series x reps | Peso |
 |---|-----------|---------------|------|
-| 1 | Curl con barra | 4 x 8-10 | 19/08 · 20 kg (barra sola) · 10 reps |
-| 2 | Curl inclinado con mancuernas | 3 x 10-12 | 19/08 · 5 kg · 8 reps |
-| 3 | Curl martillo | 3 x 12 | 19/08 · 5 kg · 12 reps (al límite) |
-| 4 | Press cerrado o fondos | 4 x 8-10 | 19/08 · fondos · peso corporal · 10 reps |
-| 5 | Extensión sobre la cabeza | 3 x 10-12 | 19/08 · polea 20 kg · 12 reps ✓ técnica controlada |
+| 1 | Curl con barra | 4 x 8-10 | 19/08 · 20 kg (barra sola) · 10 reps<br>25/08 · mancuernas **10 kg** · 4x10 ✓ (barras ocupadas) |
+| 2 | Curl inclinado con mancuernas | 3 x 10-12 | 19/08 · 5 kg · 8 reps<br>25/08 · 5 kg · 10-12-10 (última controlando la bajada) |
+| 3 | Curl martillo | 3 x 12 | 19/08 · 5 kg · 12 reps (al límite)<br>25/08 · 5 kg · 15-15 cómodas, después **7,5 kg · 18 reps** → **próxima: 10 kg** |
+| 4 | Press cerrado o fondos | 4 x 8-10 | 19/08 · fondos **en banco, pies en el piso** · 10 reps (variante fácil)<br>25/08 · fondos **en rack, peso corporal** · 8-8-8-6 rango completo ✓ |
+| 5 | Extensión sobre la cabeza | 3 x 10-12 | 19/08 · polea 20 kg · 12 reps ✓ técnica controlada<br>25/08 · **25 kg** · 12 reps ✓ → subir a 30 |
 | 6 | Extensión en polea | 3 x 12-15 | 19/08 · 20 kg · 10-12-12 + última 15 kg x 15 |
 
 
-**Core (al final, no como calentamiento)**
+**Core (al final)** — 2 ejercicios, 2 series. Alterná pareja A y B en cada día de core.
 
-| Ejercicio | Series x reps |
-|-----------|---------------|
-| Plancha lateral | 3 x 30-45 seg por lado |
-| Plancha lateral con elevación de cadera | 3 x 10-12 por lado |
-| Hollow hold (piernas levantadas boca arriba) | 3 x 20-30 seg |
-| Plancha con toque de hombros | 3 x 16 toques |
+| Pareja | Ejercicio | Series |
+|--------|-----------|--------|
+| **A** | Plancha lateral | 2 x 30-45 seg por lado |
+| **A** | Plancha con toque de hombros | 2 x 16 toques |
+| **B** | Hollow hold | 2 x 20-30 seg |
+| **B** | Plancha lateral con elevación de cadera | 2 x 10-12 por lado |
 
 ---
 
@@ -95,14 +95,14 @@
 | 6 | Encogimientos | 3 x 12 | 21/08 · 10 kg · 3x15 → **subir a 12,5** |
 
 
-**Core (al final, no como calentamiento)**
+**Core (al final)** — 2 ejercicios, 2 series. Alterná pareja A y B en cada día de core.
 
-| Ejercicio | Series x reps |
-|-----------|---------------|
-| Plancha lateral | 3 x 30-45 seg por lado |
-| Plancha lateral con elevación de cadera | 3 x 10-12 por lado |
-| Hollow hold (piernas levantadas boca arriba) | 3 x 20-30 seg |
-| Plancha con toque de hombros | 3 x 16 toques |
+| Pareja | Ejercicio | Series |
+|--------|-----------|--------|
+| **A** | Plancha lateral | 2 x 30-45 seg por lado |
+| **A** | Plancha con toque de hombros | 2 x 16 toques |
+| **B** | Hollow hold | 2 x 20-30 seg |
+| **B** | Plancha lateral con elevación de cadera | 2 x 10-12 por lado |
 
 ---
 
